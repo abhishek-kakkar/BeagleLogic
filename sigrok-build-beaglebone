@@ -1,0 +1,75 @@
+#!/bin/bash
+##
+## This file is part of the BeagleLogic project
+##
+## Copyright (C) 2014 Kumar Abhishek <abhishek@theembeddedkitchen.net>
+##
+## Based on sigrok-cross-linux in sigrok-utils by Uwe Hermann.
+## 
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 3 of the License, or
+## (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
+##
+
+# Stop immediately on make error
+set -e
+
+# Toolchain setup (linaro)
+TOOLCHAIN_TRIPLET=arm-linux-gnueabihf
+C="--host=$TOOLCHAIN_TRIPLET"
+
+# The path where the compiled packages will be installed.
+PREFIX="/usr"
+
+# Our package build directory
+BUILDDIR=$PWD
+
+# Deployment directory
+DEPLOYDIR="$BUILDDIR/deploy"
+PREFIXDIR="$BUILDDIR$PREFIX"
+
+# Configure parallel compilation
+PARALLEL_BUILD="-j"
+
+# -----------------------------------------------------------------------------
+
+P="$PREFIXDIR/lib/pkgconfig:$PREFIXDIR/lib/arm-linux-gnueabihf/pkgconfig"
+C="$C --prefix=$PREFIX"
+
+# Export pkg-config variables
+export PKG_CONFIG_LIBDIR=$P
+export PKG_CONFIG_SYSROOT_DIR=$BUILDDIR
+
+# CFLAGS and LDFLAGS to be added for linking
+export CFLAGS="-I$PREFIXDIR/include"
+export LDFLAGS="-Wl,-rpath,$PREFIXDIR/lib \
+	        -Wl,-rpath,$PREFIXDIR/lib/arm-linux-gnueabihf \
+	        -L$PREFIXDIR/lib -L$PREFIXDIR/lib/arm-linux-gnueabihf"
+
+for paths in libserialport libsigrok libsigrokdecode sigrok-cli 
+do
+	cd $paths
+
+	./autogen.sh
+	./configure $C
+
+	make $PARALLEL_BUILD
+
+	# We deploy twice, once into our local sysroot and into the deploy 
+	# directory (subsequently scp'ed to the BeagleBone Black)
+	make DESTDIR=$DEPLOYDIR install -s
+	make DESTDIR=$BUILDDIR install -s
+
+	cd ..
+done
+
