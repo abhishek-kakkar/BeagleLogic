@@ -33,7 +33,7 @@ main:
 	MOV    r1, 0x00000240      // C28 = 00_0240_00h = PRU1 CFG Registers
 	SBBO   r1, r0, 0, 4
 
-	// Configure R2 = 0x0000 - PRU1 RAM pointer
+	// Configure R2 = 0x0000 - ptr to PRU1 RAM
 	MOV    R2, 0
 
 	// Enable the cycle counter
@@ -45,14 +45,21 @@ main:
 	LBCO   R0, C28, 0x0C, 4
 	SBBO   R0, R2, 0, 4
 
-	MOV    R0, 0
+	LDI    R31, PRU0_PRU1_INTERRUPT + 16    // Signal PRU0, incoming data
+
+	MOV    R13, 0
 #ifdef TEST
 	LBBO   R4, R2, 12, 32					// Pull data from PRU1 SRAM
 	XOUT   10, R4, 32                       // Push data to Bank0
-	LDI    R31, PRU1_PRU0_INTERRUPT + 16    // Signal PRU0, incoming data
+	LDI    R31, PRU1_PRU0_INTERRUPT + 16	// Signal PRU0, incoming data
 #else
 sample0:
-	// Each NOP is a window for doing 1 instruction magic
+	// Sample into registers R14-R21
+	// Also increment global sample counter R13 that is passed
+	// as a synchronization mechanism along with the PRU registers
+	// for free. If between two interrupts PRU0 finds that the
+	// counter is more than 32, then it fires an interrupt and
+    // aborts the operation (buffer overrrun condition).
 	MOV    R14.w0, R31.w0
 	NOP
 sample1:
@@ -83,18 +90,19 @@ sample3:
 	MOV    R20.w0, R31.w0
 	NOP
 	MOV    R20.w2, R31.w0
-	NOP
+	ADD    R13, R13, 32                     // Maintain global sample counter
 	MOV    R21.w0, R31.w0
-	LDI    R31, PRU1_PRU0_INTERRUPT + 16     // Jab PRU0
+	LDI    R31, PRU1_PRU0_INTERRUPT + 16    // Jab PRU0
 	MOV    R21.w2, R31.w0
-	XOUT   10, R14, 4*8                      // Move data across the broadside
+	XOUT   10, R13, 36                      // Move data across the broadside
 	MOV    R14.w0, R31.w0
-	ADD    R0, R0, 0x01
+	NOP
 	MOV    R14.w2, R31.w0
 	JMP    sample2
 #endif
 
-	LBCO   R3, C28, 0x0C, 8                 // Store PRU1 total cycles & stall cycles in PRU1 RAM
-	SBBO   R3, R2, 4, 8
+	// We never reach here, this is for debugging purposes only
+	LBCO   R3, C28, 0x0C, 8
+	SBBO   R3, R2, 4, 8                    // Store PRU1 total cycles & stall cycles in PRU1 RAM
 
 	HALT

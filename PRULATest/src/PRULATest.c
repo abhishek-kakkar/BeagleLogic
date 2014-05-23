@@ -21,20 +21,16 @@
 
 #include <time.h>
 
-void *extmem, *pru0ram, *pru1ram;
-
-#include "PRUTestFirmware_bin.h"
-
-void load_firmware(char *name) {
-	/* Look in normal directory first, else use */
-}
+/* Handles to all PRU related memory areas*/
+void *extram, *pru0ram, *pru1ram, *prusharedram;
 
 int main(void) {
 
 	int ret, i;
 	uint32_t *ptr;
+	size_t extram_sz;
 
-	struct timespec ts;
+	struct timespec ts1, ts2;
 
 	tpruss_intc_initdata initdata = PRUSS_INTC_INITDATA;
 
@@ -42,13 +38,10 @@ int main(void) {
 
 	/* Set up the PRU */
 	prussdrv_init();
-
-	/* Set up EVTOUT0 and EVTOUT1 */
 	if ((ret = prussdrv_open(PRU_EVTOUT_0)) != 0) {
 		printf("prussdrv_open failed! Error code=%d", ret);
 		return ret;
 	}
-
 	if ((ret = prussdrv_open(PRU_EVTOUT_1)) != 0) {
 		printf("prussdrv_open failed! Error code=%d", ret);
 		return ret;
@@ -57,66 +50,104 @@ int main(void) {
 	/* Initialize INTC */
 	prussdrv_pruintc_init(&initdata);
 
-	/* Map external (DDR) memory to the PRU. We have already configured
-	 * UIO driver with extram_pool_sz
-	 */
-	prussdrv_map_extmem(&extmem);
+	/* Clear any residual interrupts from previous runs */
+	prussdrv_pru_clear_event(PRU_EVTOUT_0, PRU0_ARM_INTERRUPT);
+	prussdrv_pru_clear_event(PRU_EVTOUT_1, PRU1_ARM_INTERRUPT);
+
+	/* Get a pointer to all accessible PRU memories */
+	prussdrv_map_extmem(&extram);
 	prussdrv_map_prumem(PRUSS0_PRU0_DATARAM, &pru0ram);
 	prussdrv_map_prumem(PRUSS0_PRU1_DATARAM, &pru1ram);
+	prussdrv_map_prumem(PRUSS0_SHARED_DATARAM, &prusharedram);
 
-	// Write 16 random bytes into PRU1's memory
-	// If fw is compiled with TEST on, These will be
-	// transferred via the broadside to PRU0 and then
-	// the implementation can be verified
-	clock_gettime(CLOCK_REALTIME, &ts);
-	srandom(ts.tv_nsec);
-	for (i = 0; i < 8; i++) {
-		((uint32_t *)(pru1ram + 12))[i] = random();
-	}
+	/* Report and store the PRU buffer size */
+	extram_sz = prussdrv_extmem_size();
+	printf("DDR Buffer Size:%d at physical address 0x%08X\n\n", extram_sz, prussdrv_get_phys_addr(extram));
 
-	// Load the firmware into the PRUs
+	/*
+	 * PRU0 Firmware ABI
+	 *
+	 * To be loaded into PRU0 SRAM before loading FW
+	 *
+	 * PRU0 Call format:
+	 *   Offset  0: Sample Count (0 for continuous streaming)
+	 *   Offset  4: Reserved
+	 *   Offset  8: Half ring size (Usually 4 MB) <= Note!!
+	 *              Please note that a low ring size
+	 *              may lead to missing interrupts!
+	 *   Offset 12: Physical address of DDR where to write
+	 *
+	 * PRU0 Returns:
+	 *   Offset 16: PRU0 interrupt count
+	 *   Offset 20: PRU1 interrupt count
+	 *   Offset 24: PRU0 cycle count (only when exiting)
+	 *   Offset 28: PRU0 Stall count
+	 *   Offset 32: No. of samples collected, padded to
+	 *              next multiple of 32 [Global sample counter]
+	 *   Offset 36: Starting cycle for PRU0.
+	 */
+	ptr = pru0ram;
+	ptr[0] = 0;
+	ptr[1] = 0;
+	ptr[2] = extram_sz / 2;
+	ptr[3] = prussdrv_get_phys_addr(extram);
+	ptr[4] = 0;
+	ptr[5] = 0;
+	ptr[6] = 0;
+	ptr[7] = 0;
+	ptr[8] = 0;
+	ptr[9] = 0;
+
+	/* Load the firmware into the PRUs, PRU0 first and then PRU1 */
 	if (prussdrv_exec_program(0, "./pru0fw.bin") == 0) {
 		puts("Loaded PRU firmware for PRU0");
 	}
-
 	if (prussdrv_exec_program(1, "./pru1fw.bin") == 0) {
-		puts("Loaded PRU firmware for PRU1");
+		puts("Loaded PRU firmware for PRU1\n");
 	}
 
-	// Wait for interrupt and receive data
-	ret = prussdrv_pru_wait_event(PRU_EVTOUT_0);
+	for (i = 0; i < 1; i++) {
+		/* Wait for interrupt and receive data */
+		uint32_t *p = pru0ram;
+		uint32_t t1, t2, t3;
+
+		ret = prussdrv_pru_wait_event(PRU_EVTOUT_0);
+		prussdrv_pru_clear_event(PRU_EVTOUT_0, PRU0_ARM_INTERRUPT);
+		t1 = p[4];
+		printf("PRU_INT0(%d, %d) ", i+1, t1);
+
+		/* TODO Process data as fast as we receive. We have only ~15ms of time in between*/
+
+		ret = prussdrv_pru_wait_event(PRU_EVTOUT_1);
+		prussdrv_pru_clear_event(PRU_EVTOUT_1, PRU1_ARM_INTERRUPT);
+
+		/* Retrieve global sample count from the PRU mem */
+		t2 = p[5];
+		printf("PRU_INT1(%d, %d), ", i+1, t2, 1);
+
+		printf ("Bytes collected: %u\n", p[8]);
+
+		/* TODO Process data as fast as we receive. We have only ~15ms of time in between*/
+	}
+
+	printf("Total: %08X (%u samples)\n\nFirst 16 samples:", ptr[8], ptr[8] / 2);
+
+	uint16_t *data = extram;
+	for (i = 0; i < 16; i++) {
+		printf("%c%04X", i % 4 == 0 ? '\n' : ' ', data[i]);
+	}
+
+	puts("\nDone.");
+
+	/* Stop the PRUs and flush all interrupts */
+	prussdrv_pru_disable(1);
+	prussdrv_pru_disable(0);
+
 	prussdrv_pru_clear_event(PRU_EVTOUT_0, PRU0_ARM_INTERRUPT);
-	printf("Received Interrupt from PRU0 \n");
+	prussdrv_pru_clear_event(PRU_EVTOUT_1, PRU1_ARM_INTERRUPT);
 
-//	ret = prussdrv_pru_wait_event(PRU_EVTOUT_1);
-//	prussdrv_pru_clear_event(PRU_EVTOUT_1, PRU1_ARM_INTERRUPT);
-//	printf("PRU0 Received Interrupt from PRU1 \n");
-
-	// Print the received data
-	if (pru0ram != 0 && pru1ram != 0) {
-		ptr = pru0ram;
-		printf("PRU0 Cycle count starts at: %d\n", *ptr++);
-		printf("Cycle count after data reception:%d \n", *ptr++);
-		printf("Stall count after data reception:%d\n", *ptr++);
-
-		ptr = pru1ram;
-		printf("PRU1 Cycle count starts at: %d\n", *ptr++);
-		printf("Cycle count after data reception:%d \n", *ptr++);
-		printf("Stall count after data reception:%d \nData received:\n\n", *ptr++);
-
-		uint16_t *data = pru0ram + 12;
-		uint16_t *data1 = pru1ram + 12;
-		for (i = 0; i < 16; i++) {
-			printf("%04X\n", data[i]);
-
-//			// If testing, match PRU0 and PRU1 RAM Contents
-//			if (data[i] != data1[i]) {
-//				printf("Fail at here %d, expected %04X\n", i, data1[i]);
-//			}
-		}
-
-		printf("Done.\n\n");
-	}
+	/* Close the drivers */
+	prussdrv_exit();
 
 	return EXIT_SUCCESS;
 }
