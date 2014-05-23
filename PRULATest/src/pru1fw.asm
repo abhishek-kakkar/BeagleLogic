@@ -45,55 +45,56 @@ main:
 	LBCO   R0, C28, 0x0C, 4
 	SBBO   R0, R2, 0, 4
 
+	MOV    R0, 0
 #ifdef TEST
 	LBBO   R4, R2, 12, 32					// Pull data from PRU1 SRAM
 	XOUT   10, R4, 32                       // Push data to Bank0
 	LDI    R31, PRU1_PRU0_INTERRUPT + 16    // Signal PRU0, incoming data
 #else
-sample:
+sample0:
 	// Each NOP is a window for doing 1 instruction magic
-	MOV R4.w0, R31.w0
+	MOV    R14.w0, R31.w0
 	NOP
 sample1:
-	MOV R4.w2, R31.w0
+	MOV    R14.w2, R31.w0
 	NOP
-	MOV R5.w0, R31.w0
+sample2:
+	MOV    R15.w0, R31.w0
 	NOP
-	MOV R5.w2, R31.w0
+sample3:
+	MOV    R15.w2, R31.w0
 	NOP
-	MOV R6.w0, R31.w0
+	MOV    R16.w0, R31.w0
 	NOP
-	MOV R6.w2, R31.w0
+	MOV    R16.w2, R31.w0
 	NOP
-	MOV R7.w0, R31.w0
+	MOV    R17.w0, R31.w0
 	NOP
-	MOV R7.w2, R31.w0
+	MOV    R17.w2, R31.w0
 	NOP
-	MOV R8.w0, R31.w0
+	MOV    R18.w0, R31.w0
 	NOP
-	MOV R8.w2, R31.w0
+	MOV    R18.w2, R31.w0
 	NOP
-	MOV R9.w0, R31.w0
+	MOV    R19.w0, R31.w0
 	NOP
-	MOV R9.w2, R31.w0
+	MOV    R19.w2, R31.w0
 	NOP
-	MOV R10.w0, R31.w0
+	MOV    R20.w0, R31.w0
 	NOP
-	MOV R10.w2, R31.w0
+	MOV    R20.w2, R31.w0
 	NOP
-	MOV R11.w0, R31.w0
-	MOV R31, PRU1_PRU0_INTERRUPT + 16       // Jab PRU0
-	MOV R11.w2, R31.w0
-	XOUT 10, R4, 4*8                        // Move data across the broadside
-// For continuous sampling
-//	MOV R4.w0, R31.w0
-//	JMP sample1
+	MOV    R21.w0, R31.w0
+	LDI    R31, PRU1_PRU0_INTERRUPT + 16     // Jab PRU0
+	MOV    R21.w2, R31.w0
+	XOUT   10, R14, 4*8                      // Move data across the broadside
+	MOV    R14.w0, R31.w0
+	ADD    R0, R0, 0x01
+	MOV    R14.w2, R31.w0
+	JMP    sample2
 #endif
 
-	LBCO   R3, C28, 0x0C, 4                 // Store PRU1 total cycles in PRU1 RAM
-	SBBO   R3, R2, 4, 4
-
-	LBCO   R3, C28, 0x10, 4					// Store PRU1 stalled cycles in PRU1 RAM
-	SBBO   R3, R2, 8, 4
+	LBCO   R3, C28, 0x0C, 8                 // Store PRU1 total cycles & stall cycles in PRU1 RAM
+	SBBO   R3, R2, 4, 8
 
 	HALT
