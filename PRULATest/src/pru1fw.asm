@@ -24,7 +24,7 @@
 
 main:
 	// Zero all registers, otherwise we might see residual values
-	ZERO &R0, 4*29
+	ZERO &R0, 4*30
 
 	// OCP already enabled via PRU0 firmware
 

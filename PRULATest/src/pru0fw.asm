@@ -17,7 +17,7 @@
 
 main:
 	// Zero all registers, otherwise we might see residual values
-	ZERO &R0, 4*29
+	ZERO &R0, 4*30
 
 	// Configuration: Enable OCP, Set C28 table entry to PRUCTRL registers, enable cycle counter
 	LBCO   r0, CONST_PRUCFG, 4, 4
