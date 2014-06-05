@@ -36,7 +36,7 @@
 #include <linux/miscdevice.h>
 #include <linux/spi/spidev.h>
 
-#include "remoteproc_internal.h"
+#include <linux/../../drivers/remoteproc/remoteproc_internal.h>
 
 /* PRU_EVTOUT0 is halt (system call) */
 
@@ -3078,6 +3078,11 @@ static const struct of_device_id pru_rproc_dt_ids[] = {
 	{ .compatible = "ti,pru-rproc", .data = NULL, },
 	{},
 };
+static const struct of_device_id pruss_dt_ids[] = {
+	{ .compatible = "ti,pruss-v1", .data = NULL, },
+	{ .compatible = "ti,pruss-v2", .data = NULL, },
+	{},
+};
 MODULE_DEVICE_TABLE(of, pruss_dt_ids);
 
 static struct platform_driver pruproc_driver = {
@@ -3092,5 +3097,5 @@ static struct platform_driver pruproc_driver = {
 
 module_platform_driver(pruproc_driver);
 MODULE_LICENSE("GPL v2");
-MODULE_DESCRIPTION("PRU Remote Processor control driver");
+MODULE_DESCRIPTION("PRU Remote Processor control driver with BeagleLogic extensions");
 MODULE_AUTHOR("Pantelis Antoniou <panto@antoniou-consulting.com>");
