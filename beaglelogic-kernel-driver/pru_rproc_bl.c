@@ -120,6 +120,23 @@ struct pru_led_array {
 
 static struct pruproc *pp_led;
 
+/* BeagleLogic */
+
+#define BL_PRU	0
+#define BL_SMPL	1
+
+#define IOCTL_BL_SET_SAMPLE_FLAGS	_IOW('k', 0x20, u32)
+#define IOCTL_BL_SET_SAMPLE_SIZE	_IOW('k', 0x21, u32)
+#define IOCTL_BL_START  	_IOW('k', 0x22, u32)
+#define IOCTL_BL_STOP   	_IOW('k', 0x23, u32)
+#define IOCTL_BL_GETINDEX	_IOR('k', 0x24, u32)
+#define IOCTL_BL_FLUSH  	_IO('k', 0x25)
+
+#define BL_BUFFER_SIZE	(64 * 1024)
+#define BL_ALLOC_SIZE	(8 * 1024 * 1024)
+
+static struct pruproc *pp_bl;
+
 struct pru_vring_info {
 	struct fw_rsc_vdev_vring *rsc;
 	struct vring vr;
@@ -228,6 +245,17 @@ struct pruproc {
 		struct pru_led_array array;
 		u8 *buffer;
 	} led;
+
+	struct {
+		struct scatterlist *list;
+		u32 sampleFlags;
+		u32 sampleRate;
+		u32 sampleSize;
+		u32 bufferCount;
+
+		u32 state;
+		u32 readBufferHead;
+	} beaglelogic;
 };
 
 /* global memory map (for am33xx) (almost the same as local) */
@@ -1857,6 +1885,15 @@ static irqreturn_t pru_handler(int irq, void *data)
 		}
 	}
 
+	/* Handle interrupts from BeagleLogic */
+	if (pst->target == TARGET_ARM) {
+		int v1, v2;
+		pru_d_read_u32(pp->pru_to_pruc[0], 16, &v1);
+		pru_d_read_u32(pp->pru_to_pruc[0], 20, &v2);
+		printk("BeagleLogic received interrupt from PRU%d count = %d %d\n", pru_idx, v1, v2);
+		handled++;
+	}
+
 	if (!handled) {
 		dev_err(dev, "sysint not handled; disabling interrupt\n");
 		return IRQ_NONE;
@@ -2610,11 +2647,93 @@ quit1:
 	return -EINVAL;
 }
 
+static int beaglelogic_open(struct inode *inode, struct file *filp) {
+	filp->private_data = pp_bl;
+}
+
+static long beaglelogic_ioctl(struct file *filp, unsigned int cmd,
+		  unsigned long arg) {
+	// WIP
+	switch (cmd) {
+		case IOCTL_BL_GETINDEX:
+			return 0;
+
+		case IOCTL_BL_SET_SAMPLE_FLAGS:
+			return 0;
+
+		case IOCTL_BL_SET_SAMPLE_SIZE:
+			/* Do dma_alloc_coherent here */
+			return 0;
+
+		case IOCTL_BL_START:
+			return 0;
+
+		case IOCTL_BL_STOP:
+			return 0;
+
+		case IOCTL_BL_FLUSH:
+			return 0;
+	}
+	return -ENOTTY;
+}
+
+ssize_t beaglelogic_read (struct file *filp, char __user *buf,
+                          size_t sz, loff_t *offset) {
+	return 0;
+}
+
+int beaglelogic_mmap(struct file *filp, struct vm_area_struct *vm) {
+	return 0;
+}
+
+static const struct file_operations pru_beaglelogic_fops = {
+	.owner = THIS_MODULE,
+	.open = beaglelogic_open,
+	.unlocked_ioctl = beaglelogic_ioctl,
+	.read = beaglelogic_read,
+	.mmap = beaglelogic_mmap
+};
+
+static struct miscdevice beaglelogic_miscdev = {
+	.minor = MISC_DYNAMIC_MINOR,
+	.name = __stringify(pru_beaglelogic),
+	.fops = &pru_beaglelogic_fops,
+};
+
+static int pruproc_create_beaglelogic_devices(struct pruproc *pp) {
+	struct platform_device *pdev = pp->pdev;
+	struct pruproc_core *ppc = pp->pru_to_pruc[LED_DATA_PRU];
+	struct device *dev = &pdev->dev;
+	struct device_node *np = dev->of_node;
+	struct property *prop;
+	int err, ret, proplen;
+
+	/* Enable only when needed */
+	prop = of_find_property(np, "pru-beaglelogic-enabled", &proplen);
+	if (prop == 0)
+		return 0;
+
+	err = misc_register(&beaglelogic_miscdev);
+	if (err) {
+		dev_err(dev, "Registration failed.");
+	}
+	pp_bl = pp;
+
+	mutex_init(&ppc->io_lock);
+
+	return 0;
+quit2:
+	misc_deregister(&leds_miscdev);
+quit1:
+	return -EINVAL;
+}
+
 /* after all is configured create the linux devices */
 static void pruproc_create_devices(struct pruproc *pp)
 {
 	pruproc_create_pwm_devices(pp);
 	pruproc_create_leds_devices(pp);
+	pruproc_create_beaglelogic_devices(pp);
 }
 
 static int pruproc_probe(struct platform_device *pdev)
