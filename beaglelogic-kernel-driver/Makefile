@@ -21,5 +21,5 @@ devicetree:
 
 # Install the PRU firmware
 firmware:
-	@make -C $(PWD)/../bl-firmware install
+	@make -C $(PWD)/../beaglelogic-firmware install
 
