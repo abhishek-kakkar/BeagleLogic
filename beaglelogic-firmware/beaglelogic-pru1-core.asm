@@ -6,13 +6,13 @@
 
 	.include "beaglelogic-pru-defs.inc"
 
-NOP	.macro
-	ADD R0, R0, R0
-	.endm
+NOP  .macro
+	 ADD R0.b0, R0.b0, R0.b0
+	 .endm
 
-NOPP	.macro
+NOPP .macro
 	
-	.endm
+	 .endm
 
 	.sect ".text:main"
 	.global main
@@ -43,55 +43,55 @@ main:
 	LDI    R31, PRU1_ARM_INTERRUPT + 16    ; Signal PRU0, incoming data
 	HALT
 	
-	LDI    R13, 0
+	LDI    R29, 0
 sample0:
-	; Sample into registers R14-R21
-	; Also increment global sample counter R13 that is passed
+	; Sample into registers R21-R28
+	; Also increment global sample counter R29 that is passed
 	; as a synchronization mechanism along with the PRU registers
 	; for free. If between two interrupts PRU0 finds that the
 	; counter is more than 32, then it fires an interrupt and
 	; aborts the operation (buffer overrrun condition).
-	MOV    R14.w0, R31.w0
+	MOV    R21.w0, R31.w0
 	NOP
 sample1:
-	MOV    R14.w2, R31.w0
+	MOV    R21.w2, R31.w0
 	NOP
 sample2:
-	MOV    R15.w0, R31.w0
+	MOV    R22.w0, R31.w0
 	NOP
 sample3:
-	MOV    R15.w2, R31.w0
+	MOV    R22.w2, R31.w0
 	NOP
-	MOV    R16.w0, R31.w0
+	MOV    R23.w0, R31.w0
 	NOP
-	MOV    R16.w2, R31.w0
+	MOV    R23.w2, R31.w0
 	NOP
-	MOV    R17.w0, R31.w0
+	MOV    R24.w0, R31.w0
 	NOP
-	MOV    R17.w2, R31.w0
+	MOV    R24.w2, R31.w0
 	NOP
-	MOV    R18.w0, R31.w0
+	MOV    R25.w0, R31.w0
 	NOP
-	MOV    R18.w2, R31.w0
+	MOV    R25.w2, R31.w0
 	NOP
-	MOV    R19.w0, R31.w0
+	MOV    R26.w0, R31.w0
 	NOP
-	MOV    R19.w2, R31.w0
+	MOV    R26.w2, R31.w0
 	NOP
-	MOV    R20.w0, R31.w0
+	MOV    R27.w0, R31.w0
 	NOP
-	MOV    R20.w2, R31.w0
+	MOV    R27.w2, R31.w0
 	NOPP
-	ADD    R13, R13, 32                     ; Maintain global sample counter
-	MOV    R21.w0, R31.w0
+	ADD    R29, R29, 32                     ; Maintain global sample counter
+	MOV    R28.w0, R31.w0
 	NOPP
 	LDI    R31, PRU1_PRU0_INTERRUPT + 16    ; Jab PRU0
-	MOV    R21.w2, R31.w0
-	XOUT   10, &R13, 36
+	MOV    R28.w2, R31.w0
+	XOUT   10, &R28, 36
 	NOPP                                    ; Move data across the broadside
-	MOV    R14.w0, R31.w0
+	MOV    R21.w0, R31.w0
 	NOP
-	MOV    R14.w2, R31.w0
+	MOV    R21.w2, R31.w0
 	NOPP
 	JMP    sample2
 
