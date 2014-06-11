@@ -2705,6 +2705,12 @@ static struct miscdevice beaglelogic_miscdev = {
 	.fops = &pru_beaglelogic_fops,
 };
 
+/* WARNING: No checking */
+static inline void beaglelogic_buffer_sync(struct device *dev, struct pruproc *pp, int bufNo) {
+	dma_sync_single_for_cpu(dev, pp->beaglelogic.cxt->list[bufNo].dma_start_addr,
+			BL_ALLOC_SIZE, DMA_FROM_DEVICE);
+}
+
 static int beaglelogic_open(struct inode *inode, struct file *filp)
 {
 	struct pruproc *pp = dev_get_drvdata(beaglelogic_miscdev.this_device);
@@ -2716,9 +2722,40 @@ static int beaglelogic_open(struct inode *inode, struct file *filp)
 	if (pp->beaglelogic.bufCount == 0)
 		return -ENOMEM;
 
-	dma_set_coherent_mask(beaglelogic_miscdev.this_device, 0);
+	/* Sync the first buffer */
+	beaglelogic_buffer_sync(beaglelogic_miscdev.this_device, pp, 0);
 
 	return 0;
+}
+
+#define BL_BLOCK_SIZE	(PAGE_SIZE * 16)
+
+/* circularly read the buffer */
+ssize_t beaglelogic_read (struct file *filp, char __user *buf,
+                          size_t sz, loff_t *offset)
+{
+	struct pruproc *pp = filp->private_data;
+	u32 bufNo, bufHead, ret;
+
+	bufNo = pp->beaglelogic.curBufferRead;
+	bufHead = pp->beaglelogic.curBufferHead;
+
+	if (bufHead + BL_BLOCK_SIZE > BL_ALLOC_SIZE) {
+		bufNo++;
+
+		if (bufNo >= pp->beaglelogic.bufCount)
+			bufNo = 0;
+
+		pp->beaglelogic.curBufferRead = bufNo;
+		beaglelogic_buffer_sync(beaglelogic_miscdev.this_device, pp, bufNo);
+		bufHead = 0;
+	}
+
+	ret = __copy_to_user(buf, &(((char *)pp->beaglelogic.capbufs[bufNo])[bufHead]), BL_BLOCK_SIZE);
+
+	pp->beaglelogic.curBufferHead = bufHead + BL_BLOCK_SIZE;
+
+	return BL_BLOCK_SIZE;
 }
 
 static long beaglelogic_ioctl(struct file *filp, unsigned int cmd,
@@ -2749,37 +2786,6 @@ static long beaglelogic_ioctl(struct file *filp, unsigned int cmd,
 			return 0;
 	}
 	return -ENOTTY;
-}
-
-#define BL_BLOCK_SIZE	(PAGE_SIZE * 16)
-
-//static char dummy[BL_BLOCK_SIZE];
-
-/* circularly read the buffer */
-ssize_t beaglelogic_read (struct file *filp, char __user *buf,
-                          size_t sz, loff_t *offset)
-{
-	struct pruproc *pp = filp->private_data;
-	u32 bufNo, bufHead, ret;
-
-	bufNo = pp->beaglelogic.curBufferRead;
-	bufHead = pp->beaglelogic.curBufferHead;
-
-	if (bufHead + BL_BLOCK_SIZE > BL_ALLOC_SIZE) {
-		bufNo++;
-
-		if (bufNo >= pp->beaglelogic.bufCount)
-			bufNo = 0;
-
-		pp->beaglelogic.curBufferRead = bufNo;
-		bufHead = 0;
-	}
-
-	ret = __copy_to_user(buf, &(((char *)pp->beaglelogic.capbufs[bufNo])[bufHead]), BL_BLOCK_SIZE);
-
-	pp->beaglelogic.curBufferHead = bufHead + BL_BLOCK_SIZE;
-
-	return BL_BLOCK_SIZE;
 }
 
 /* Map the PRU shared memory to user space */
@@ -2841,14 +2847,14 @@ static int beaglelogic_memalloc(u32 bufsize) {
 
 	/* Allocate buffers, each of BL_ALLOC_SIZE (currently 8 MB) */
 	for (i = 0; i < cnt; i++) {
-		pp->beaglelogic.capbufs[i] = dma_alloc_coherent(dev,
-				BL_ALLOC_SIZE, &dma_addr, GFP_KERNEL | GFP_ATOMIC);
+		pp->beaglelogic.capbufs[i] = kmalloc(BL_ALLOC_SIZE, GFP_KERNEL);
+		dma_addr = dma_map_single(dev, pp->beaglelogic.capbufs[i], BL_ALLOC_SIZE, DMA_FROM_DEVICE);
+
+		if (dma_mapping_error(dev, dma_addr))
+			goto failrelease;
 
 		pp->beaglelogic.cxt->list[i].dma_start_addr = dma_addr;
 		pp->beaglelogic.cxt->list[i].dma_end_addr = dma_addr + BL_ALLOC_SIZE - 1;
-
-		if (!(pp->beaglelogic.capbufs[i]))
-			goto failrelease;
 	}
 
 	dev_info(dev, "Successfully allocated %d bytes of memory.\n", cnt * BL_ALLOC_SIZE);
@@ -2858,14 +2864,21 @@ static int beaglelogic_memalloc(u32 bufsize) {
 failrelease:
 	for (i = 0; i < cnt; i++) {
 		if (pp->beaglelogic.capbufs[i]) {
-			dma_free_coherent(dev, BL_ALLOC_SIZE,
-					pp->beaglelogic.capbufs[i], pp->beaglelogic.cxt->list[i].dma_start_addr);
+			/* Release any made mappings */
+			dma_unmap_single(dev, pp->beaglelogic.cxt->list[i].dma_start_addr, BL_ALLOC_SIZE, DMA_FROM_DEVICE);
+
+			/* Release the kernel buffers */
+			kfree(pp->beaglelogic.capbufs[i]);
+			pp->beaglelogic.capbufs[i] = NULL;
 		}
 	}
+
 	devm_kfree(dev, pp->beaglelogic.capbufs);
 	devm_kfree(dev, pp->beaglelogic.cxt->list);
+
 	pp->beaglelogic.capbufs = NULL;
 	pp->beaglelogic.cxt->list = NULL;
+
 	dev_err(dev, "Sample buffer allocation:");
 failnomem:
 	dev_err(dev, "Not enough memory\n");
@@ -2877,16 +2890,19 @@ static int beaglelogic_memfree(void) {
 	struct device *dev = beaglelogic_miscdev.this_device;
 	struct pruproc *pp = dev_get_drvdata(dev);
 
-	if (pp->beaglelogic.capbufs) {
-		for (i = 0; i < pp->beaglelogic.bufCount; i++) {
-			dma_free_coherent(dev, BL_ALLOC_SIZE,
-					pp->beaglelogic.capbufs[i], pp->beaglelogic.cxt->list[i].dma_start_addr);
+	for (i = 0; i < pp->beaglelogic.bufCount; i++) {
+		if (pp->beaglelogic.capbufs[i]) {
+			/* Release the DMA mappings */
+			dma_unmap_single(dev, pp->beaglelogic.cxt->list[i].dma_start_addr, BL_ALLOC_SIZE, DMA_FROM_DEVICE);
+
+			/* Release the kernel buffers */
+			kfree(pp->beaglelogic.capbufs[i]);
+			pp->beaglelogic.capbufs[i] = NULL;
 		}
-		devm_kfree(dev, pp->beaglelogic.capbufs);
 	}
 
-	if (pp->beaglelogic.cxt->list)
-		devm_kfree(dev, pp->beaglelogic.cxt->list);
+	devm_kfree(dev, pp->beaglelogic.capbufs);
+	devm_kfree(dev, pp->beaglelogic.cxt->list);
 
 	pp->beaglelogic.capbufs = NULL;
 	pp->beaglelogic.cxt->list = NULL;
