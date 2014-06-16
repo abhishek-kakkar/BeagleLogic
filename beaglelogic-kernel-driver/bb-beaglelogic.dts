@@ -12,7 +12,7 @@
 /plugin/;
 
 / {
-	compatible = "ti,beaglebone", "ti,beaglebone-black", "ti,beaglelogic";
+	compatible = "ti,beaglebone", "ti,beaglebone-black", "beaglelogic,beaglelogic";
 
 	/* Identification */
 	part-number = "bb-beaglelogic";
@@ -70,7 +70,7 @@
 	};
 
 	/* PRU Configuration */
-	fragment@2 {
+	fragment@1 {
 		target = <&ocp>;
 
 		__overlay__ {
@@ -80,7 +80,7 @@
 			#size-cells = <1>;
 
 			prurproc {
-				compatible = "ti,pru-rproc", "ti,beaglelogic";
+				compatible = "ti,pru-rproc";
 
 				pinctrl-names = "default";
 				pinctrl-0 = <&pru_pru_pins>;
@@ -202,16 +202,17 @@
 
 				/* Enable BeagleLogic extensions to the rproc driver */
 				pru-beaglelogic-enabled;
-				
+
 				/* Add default settings for the LA core */
 				pru-beaglelogic {
-					samplerate = <50000000>;/* 100MHz, 50MHz, 40MHz, 25MHz, 20MHz, 10MHz, 5MHz, 1MHz : (200 / int n) MHz */
-					count = <1>; 		/* Sample byte count: 1 or 2 bytes */
-					memarea = <16777216>;	/* 16Mbytes initial sample buffer */
-					trigger = <0>; 		/* RFU for further firmware revisions */
-					enable-rle = <0>; 	/* RFU for further revisions at lower sample rates */
+					compatible = "beaglelogic,beaglelogic";
+					samplerate = <50000000>;	/* 100MHz, 50MHz, 40MHz, 25MHz, 20MHz, 10MHz, 5MHz, 1MHz : (200 / int n) MHz */
+					sampleunit = <1>;		/* Sample byte count: 1 or 2 bytes */
+					numbuffers = <8>;		/* Allocate a ring of 8 buffers */
+					allocsize = <4194304>;		/* Allocate buffers of size 4 MB * 8 = 32 MB circular FIFO */
+					triggerflags = <0>; 		/* RFU for further firmware revisions */
 				};
-
+				
 				/* PRU0 - psuedo-DMA controller */
 				pru0 {
 					pru-index = <0>;
@@ -225,6 +226,10 @@
 					pctrl = <0x22000>;
 					pdbg  = <0x22400>;
 
+					/* sysevents signaling ring activity (host, pru)*/
+					vring-sysev = <24 25>;
+
+					firmware-elf;
 					firmware = "beaglelogic-pru0";
 				};
 
@@ -241,6 +246,10 @@
 					pctrl = <0x24000>;
 					pdbg  = <0x24400>;
 
+					/* sysevents signaling ring activity (host, pru)*/
+					vring-sysev = <26 27>;
+
+					firmware-elf;
 					firmware = "beaglelogic-pru1";
 				};
 			};
