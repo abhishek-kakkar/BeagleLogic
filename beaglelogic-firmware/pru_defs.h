@@ -455,7 +455,7 @@ __far volatile char C4[0x100] __attribute__((cregister("C4", near)));	/* PRUCFG 
 #define SYSEV_PRU0_TO_ARM	19
 #define SYSEV_PRU0_TO_PRU1	17
 #define SYSEV_PRU1_TO_ARM	20
-#define SYSEV_PRU1_TO_PRU0	19
+#define SYSEV_PRU1_TO_PRU0	18
 
 /* for communication with the host we have another set of events */
 #define SYSEV_VR_ARM_TO_PRU0	24

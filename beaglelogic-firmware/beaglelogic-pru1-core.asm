@@ -19,7 +19,6 @@ NOPP .macro
 
 main:
 	; Zero all registers, otherwise we might see residual values
-	ZERO &R0, 4*30
 
 	; OCP already enabled via PRU0 firmware
 
@@ -38,11 +37,22 @@ main:
 
 	; Load Cycle count reading to registers [LBCO=4 cycles, SBCO=2 cycles]
 	LBCO   &R0, C28, 0x0C, 4
-	SBBO   &R0, R2, 0, 4
+	SBCO   &R0, C24, 0, 4
 
-	LDI    R31, PRU1_ARM_INTERRUPT + 16    ; Signal PRU0, incoming data
+	; Load magic bytes into R2
+	LDI32  R2, 0xBEA61E10
+
+	; Wait for PRU0 to load configuration into R2 [samplerate] and R3 [unit]
+	; This will occur from an downcall issued to us by PRU0
+	HALT
+
+	; Jump to the appropriate sample loop
+	; TODO
+
+	LDI    R31, 27 + 16                     ; Signal the beaglelogic kernel driver
 	HALT
 	
+	; Sample starts here
 	LDI    R29, 0
 sample0:
 	; Sample into registers R21-R28
@@ -87,7 +97,7 @@ sample3:
 	NOPP
 	LDI    R31, PRU1_PRU0_INTERRUPT + 16    ; Jab PRU0
 	MOV    R28.w2, R31.w0
-	XOUT   10, &R28, 36
+	XOUT   10, &R21, 36
 	NOPP                                    ; Move data across the broadside
 	MOV    R21.w0, R31.w0
 	NOP
@@ -97,6 +107,6 @@ sample3:
 
 	; We never reach here, this is for debugging purposes only
 	LBCO   &R3, C28, 0x0C, 8
-	SBBO   &R3, R2, 4, 8                    ; Store PRU1 total cycles & stall cycles in PRU1 RAM
+	SBCO   &R3, C24, 4, 8                    ; Store PRU1 total cycles & stall cycles in PRU1 RAM
 
 	HALT
