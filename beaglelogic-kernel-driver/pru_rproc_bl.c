@@ -1847,7 +1847,7 @@ static irqreturn_t pru_handler(int irq, void *data)
 
 	/* Handle BeagleLogic interrupts (same as vrings)
 	 * This takes precedence when BeagleLogic is enabled and bound */
-	if (pst->vring && pp->beaglelogic)
+	if (pst->vring == 1 && pp->beaglelogic)
 		return pp->beaglelogic->serve_irq(pru_idx, pp->beaglelogic);
 
 	/* we either handle a vring or not */
@@ -2712,8 +2712,6 @@ static int pruproc_create_beaglelogic_devices(struct pruproc *pp) {
 
 	struct property *prop;
 	int proplen;
-
-	pp_bl = NULL;
 
 	/* Enable only when needed */
 	prop = of_find_property(np, "pru-beaglelogic-enabled", &proplen);
