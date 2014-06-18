@@ -70,7 +70,9 @@ typedef struct prusamplebuf {
 
 /* Shared structure containing PRU attributes */
 typedef struct capture_context {
-	u32 sampleRate;
+	/* Firmware context structure magic bytes */
+#define BL_FW_MAGIC	0xBEA61E10
+	u32 magic;
 	u32 errorCode;
 
 	u32 interrupt1count;
@@ -188,10 +190,11 @@ static int beaglelogic_memalloc(struct device *dev, u32 bufsize)
 
 	/* Allocate buffers */
 	for (i = 0; i < cnt; i++) {
-		buf = devm_kzalloc(dev, bldev->bufunitsize,
-				GFP_KERNEL | GFP_ATOMIC);
+		buf = kmalloc(bldev->bufunitsize, GFP_KERNEL);
 		if (!buf)
 			goto failrelease;
+
+		memset(buf, 0xFF, bldev->bufunitsize);
 
 		bldev->buffers[i].buf = buf;
 		bldev->buffers[i].phys_addr = virt_to_phys(buf);
@@ -213,9 +216,9 @@ static int beaglelogic_memalloc(struct device *dev, u32 bufsize)
 failrelease:
 	for (i = 0; i < cnt; i++) {
 		if (bldev->buffers[i].buf)
-			devm_kfree(dev, bldev->buffers[i].buf);
+			kfree(bldev->buffers[i].buf);
 	}
-	kfree(bldev->buffers);
+	devm_kfree(dev, bldev->buffers);
 	dev_err(dev, "Sample buffer allocation:");
 failnomem:
 	dev_err(dev, "Not enough memory\n");
@@ -232,10 +235,11 @@ static void beaglelogic_memfree(struct device *dev)
 
 	for (i = 0; i < bldev->bufcount; i++) {
 		if (bldev->buffers[i].buf)
-			devm_kfree(dev, bldev->buffers[i].buf);
+			kfree(bldev->buffers[i].buf);
 	}
 
-	devm_kfree(dev, bldev->buffers);
+	if (i)
+		devm_kfree(dev, bldev->buffers);
 
 	mutex_unlock(&bldev->mutex);
 }
@@ -270,6 +274,8 @@ static void beaglelogic_unmap_buffer(struct device *dev, logic_buffer *buf)
 	buf->state = STATE_BL_BUF_UNMAPPED;
 }
 
+/* Fill the sample buffer with a pattern of increasing 32-bit ints
+ * This can be studied to watch out for dropped bytes/buffers */
 static void beaglelogic_fill_buffer_testpattern(struct device *dev)
 {
 	struct beaglelogicdev *bldev = dev_get_drvdata(dev);
@@ -279,7 +285,7 @@ static void beaglelogic_fill_buffer_testpattern(struct device *dev)
 	for (i = 0; i < bldev->bufcount; i++) {
 		addr = bldev->buffers[i].buf;
 
-		for (j = 0; j < bldev->buffers[i].size / 4; j++)
+		for (j = 0; j < bldev->buffers[i].size / sizeof(cnt); j++)
 			*addr++ = cnt++;
 	}
 }
@@ -292,8 +298,8 @@ static int beaglelogic_map_and_submit_all_buffers(struct device *dev)
 	int i, j;
 	dma_addr_t addr;
 
-	if (bldev->state == STATE_BL_ERROR)
-		return -1;
+//	if (bldev->state == STATE_BL_ERROR)
+//		return -1;
 
 	if (!pru_buflist)
 		return -1;
@@ -303,7 +309,8 @@ static int beaglelogic_map_and_submit_all_buffers(struct device *dev)
 			goto fail;
 	}
 
-	/* TODO Write buffer table to the PRU memory */
+	/* Write buffer table to the PRU memory */
+	memset(pru_buflist, 0, bldev->bufcount * sizeof(*pru_buflist));
 	for (i = 0; i < bldev->bufcount; i++) {
 		addr = bldev->buffers[i].phys_addr;
 		pru_buflist[i].dma_start_addr = addr;
@@ -318,6 +325,9 @@ fail:
 	/* Unmap the buffers */
 	for (j = 0; j < i; j++)
 		beaglelogic_unmap_buffer(dev, &bldev->buffers[i]);
+
+	dev_err(dev, "DMA Mapping failed at i=%d\n", i);
+
 	bldev->state = STATE_BL_ERROR;
 	return 1;
 }
@@ -402,20 +412,20 @@ int beaglelogic_serve_irq(int irqno, void *data)
 //	unsigned long int flags;
 	u32 state;
 
-//	dev_info(bldev->miscdev.this_device, "IRQ #%d\n", irqno);
+	printk("Beaglelogic IRQ #%d\n", irqno);
 
 	if (irqno == BL_IRQ_BUFREADY) {
 		/* Update the state of the currently read buffer */
 		state = bldev->state;
 
-		if (state != STATE_BL_RUNNING) {
-			bldev->state = STATE_BL_ERROR;
-			return IRQ_HANDLED;
-		}
+//		if (state != STATE_BL_RUNNING) {
+//			bldev->state = STATE_BL_ERROR;
+//			return IRQ_HANDLED;
+//		}
 
 		/* FIXME implement locks properly */
 //		spin_lock_irqsave(&bldev->lock, flags);
-		if (bldev->state != STATE_BL_BUF_MAPPED) {
+		if (bldev->bufbeingread->state != STATE_BL_BUF_MAPPED) {
 			dev_err(dev, "Buffer overrun detected. bufindex=%d",
 					bldev->bufbeingread->index);
 			bldev->state = STATE_BL_ERROR;
@@ -432,7 +442,10 @@ int beaglelogic_serve_irq(int irqno, void *data)
 		/* This is a cleanup interrupt, the PRUs should now return
 		 * to idle state and ready for yet another operation. */
 		state = bldev->state;
-		if (state != STATE_BL_REQUEST_STOP &&
+		if (state <= STATE_BL_ARMED) {
+			/* We were expecting this */
+			dev_info(dev, "config written, BeagleLogic ready\n");
+		} else if (state != STATE_BL_REQUEST_STOP &&
 				state != STATE_BL_RUNNING) {
 			dev_err(dev, "Unexpected stop request \n");
 			bldev->state = STATE_BL_ERROR;
@@ -448,21 +461,36 @@ int beaglelogic_serve_irq(int irqno, void *data)
 int beaglelogic_write_configuration(struct device *dev)
 {
 	struct beaglelogicdev *bldev = dev_get_drvdata(dev);
-	return bldev->downcall_idx(0, BL_DC_SM_TRIGGER,
+	int i;
+
+	dev_info(dev, "Writing configuration to PRU");
+
+	/* Lock the mutex here. The ISR Ready call unlocks it */
+	i = bldev->downcall_idx(0, BL_DC_SM_TRIGGER,
 			bldev->coreclockfreq / bldev->samplerate,
 			bldev->sampleunit, bldev->triggerflags, 0, 0);
+
+	dev_info(dev, "Err code = %d", i);
+	return 0;
 }
 
 /* Begin the sampling operation [This takes the mutex] */
 int beaglelogic_start(struct device *dev) {
 	struct beaglelogicdev *bldev = dev_get_drvdata(dev);
 
-	/* Grab the mutex */
+	/* Grab the mutex again */
 	mutex_lock(&bldev->mutex);
+
+	/* This grabs the mutex. The mutex is unlocked by the ISR */
 	if (beaglelogic_write_configuration(dev)) {
 		mutex_unlock(&bldev->mutex);
 		return -1;
 	}
+
+	bldev->bufbeingread = &bldev->buffers[0];
+
+	/* Downcall to begin */
+	bldev->downcall_idx(0, BL_DC_SM_ARM, 0, 0, 0, 0, 0);
 
 	/* Perform post-downcall driver-specific tasks inside pru_rproc */
 	bldev->pru_start();
@@ -505,10 +533,7 @@ static int beaglelogic_f_open(struct inode *inode, struct file *filp)
 
 	filp->private_data = reader;
 
-	/* Map all the buffers in advance to minimize start latency
-	 * This 4 - statement printk attempts to take an honest estimate
-	 * of buffer mapping time. Unmapping time is similar, as they both
-	 * essentially invalidate the cache lines */
+	/* Map all the buffers in advance to minimize start latency */
 	if (beaglelogic_map_and_submit_all_buffers(dev))
 		return -ENOMEM;
 
@@ -534,10 +559,10 @@ ssize_t beaglelogic_f_read (struct file *filp, char __user *buf,
 	if (reader->buf == NULL) {
 		reader->buf = &bldev->buffers[0];
 		/* FIXME uncomment this after PRU firmware is revamped */
-//		if (beaglelogic_start(dev)) {
-//			dev_err(err, "Error in starting capture");
-//			return -EIO;
-//		}
+		if (beaglelogic_start(dev)) {
+			dev_err(dev, "Error in starting capture\n");
+			return -EIO;
+		}
 	}
 	else {
 		/* EOF Condition: we read the last buf ready and state is
@@ -552,9 +577,13 @@ ssize_t beaglelogic_f_read (struct file *filp, char __user *buf,
 
 	/* FIXME Detect buffer overrun. This is possibly done in the ISR now */
 
+	dev_info(dev, "sleeping for wait \n");
+
 	/* FIXME after PRU FW update. ait for the buffer to become available */
-	//wait_event_interruptible(bldev->wait,
-	//		reader->buf->state == STATE_BL_BUF_READ);
+	wait_event_interruptible(bldev->wait,
+			reader->buf->state == STATE_BL_BUF_READ);
+
+	dev_info(dev, "woken up by ISR\n");
 
 	/* Unmap the buffer before read */
 	beaglelogic_unmap_buffer(dev, reader->buf);
@@ -857,8 +886,12 @@ static ssize_t bl_state_store(struct device *dev,
 		return -EINVAL;
 
 	/* TODO actual PRU triggering */
-	bldev->state = val;
-
+	if (val == 1) {
+		beaglelogic_map_and_submit_all_buffers(dev);
+		beaglelogic_start(dev);
+	} else if (val == 0) {
+		beaglelogic_stop(dev);
+	}
 	return count;
 }
 
@@ -866,16 +899,17 @@ static ssize_t bl_buffers_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
 	struct beaglelogicdev *bldev = dev_get_drvdata(dev);
-	int i, c;
+	int i, c, cnt;
 
-	for (i = 0, c = 0; i < bldev->bufcount; i++) {
-		c += scnprintf(buf, PAGE_SIZE, "%08x,%09u\n",
+	for (i = 0, c = 0, cnt = 0; i < bldev->bufcount; i++) {
+		c = scnprintf(buf, PAGE_SIZE, "%08x,%09u\n",
 				(u32)bldev->buffers[i].phys_addr,
 				bldev->buffers[i].size);
+		cnt += c;
 		buf += c;
 	}
 
-	return c;
+	return cnt;
 }
 
 static ssize_t bl_testpattern_store(struct device *dev,
@@ -939,6 +973,9 @@ static int beaglelogic_probe(struct platform_device *pdev)
 
 //	struct device *ppdev; // TODO implement device tree configuration
 
+	printk("BeagleLogic loaded and initializing\n");
+
+	/* Allocate memory for our private structure */
 	bldev = kzalloc(sizeof(*bldev), GFP_KERNEL);
 	if (!bldev)
 		goto fail;
@@ -948,20 +985,22 @@ static int beaglelogic_probe(struct platform_device *pdev)
 	bldev->miscdev.mode = S_IRUGO;
 	bldev->miscdev.name = "beaglelogic";
 
+	/* Export the IRQ handler */
 	bldev->serve_irq = beaglelogic_serve_irq;
 
+	/* Link the platform device data to our private structure */
 	bldev->p_dev = &pdev->dev;
-
 	dev_set_drvdata(bldev->p_dev, bldev);
 
+	/* Bind to the pru_rproc module */
 	err = pruproc_beaglelogic_request_bind((void *)bldev);
 	if (err)
 		goto fail;
 
+	/* Once done, register our misc device and link our private data */
 	err = misc_register(&bldev->miscdev);
 	if (err)
 		goto fail;
-
 	dev = bldev->miscdev.this_device;
 	dev_set_drvdata(dev, bldev);
 
@@ -994,8 +1033,6 @@ static int beaglelogic_probe(struct platform_device *pdev)
 	}
 
 	ret = bldev->downcall_idx(0, BL_DC_GET_CXT_PTR, 0, 0, 0, 0, 0);
-	dev_info(dev, "Context structure at offset %04X", ret);
-
 	bldev->cxt_pru = bldev->d_da_to_va(0, ret);
 
 	if (!bldev->cxt_pru) {
@@ -1003,11 +1040,20 @@ static int beaglelogic_probe(struct platform_device *pdev)
 		goto faildereg;
 	}
 
+	if (bldev->cxt_pru->magic == BL_FW_MAGIC)
+		dev_info(dev, "Valid PRU capture context structure "\
+				"found at offset %04X\n", ret);
+	else {
+		dev_err(dev, "Firmware error!\n");
+		goto faildereg;
+	}
+
+
 	/* Apply default configuration
 	 * TODO Apply configuration from device tree structure */
 	bldev->samplerate = 50 * 1000 * 1000;
 	bldev->sampleunit = 0;
-	bldev->bufunitsize = 4 * 1024 * 1024;
+	bldev->bufunitsize = 8 * 1024 * 1024;
 	bldev->triggerflags = 0;
 
 	/* We got configuration from PRUs, now mark device init'd */
@@ -1033,14 +1079,22 @@ static int beaglelogic_remove(struct platform_device *pdev)
 	struct beaglelogicdev *bldev = platform_get_drvdata(pdev);
 	struct device *dev = bldev->miscdev.this_device;
 
+	/* Unregister ourselves from the pru_rproc module */
 	pruproc_beaglelogic_request_unbind();
 
+	/* Free all buffers */
+	beaglelogic_memfree(dev);
+
+	/* Remove the sysfs attributes */
 	sysfs_remove_group(&dev->kobj, &beaglelogic_attr_group);
 
+	/* Deregister the misc device */
 	misc_deregister(&bldev->miscdev);
 
+	/* Free up memory */
 	kfree(bldev);
 
+	/* Print a log message to announce unloading */
 	printk("BeagleLogic unloaded\n");
 	return 0;
 }
@@ -1052,7 +1106,7 @@ static const struct of_device_id beaglelogic_dt_ids[] = {
 
 static struct platform_driver beaglelogic_driver = {
 	.driver = {
-		.name = "BeagleLogic",
+		.name = "beaglelogic",
 		.owner = THIS_MODULE,
 		.of_match_table = beaglelogic_dt_ids,
 	},
