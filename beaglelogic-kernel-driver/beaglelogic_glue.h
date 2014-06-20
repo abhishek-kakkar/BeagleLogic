@@ -26,7 +26,7 @@ struct beaglelogic_glue {
 	/* Imported functions */
 	int (*downcall_idx)(int, u32, u32, u32, u32, u32, u32);
 	void __iomem *(*d_da_to_va)(int, u32);
-	int (*pru_start)(void);
+	int (*pru_start)(int);
 	void (*pru_request_stop)(void);
 
 	/* Exported functions */
