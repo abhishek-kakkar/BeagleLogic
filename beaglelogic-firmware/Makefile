@@ -19,7 +19,7 @@ STRIP=strippru
 # -ppa				Continue after generating deps
 # -DDEBUG			Enable debug
 # CFLAGS= -v3 --c99 --gcc -O3 --printf_support=minimal -ppd -ppa -DDEBUG 
-CFLAGS= -v3 -s -al --c99 --gcc --printf_support=minimal --symdebug:none
+CFLAGS= -v3 -s -al -O3 --c99 --gcc --printf_support=minimal --symdebug:none
 
 # Linker Options
 # -cr 				Link using RAM auto init model (loader assisted)
