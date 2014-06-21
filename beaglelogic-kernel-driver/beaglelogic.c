@@ -156,8 +156,13 @@ typedef struct bufreader {
 #define to_beaglelogicdev(dev)	container_of((dev), \
 		struct beaglelogicdev, miscdev)
 
+#define DRV_NAME 	"beaglelogic"
+#define DRV_VERSION 	"1.0"
 
 /* Begin Buffer Management section */
+static int bufunitsize = 4 * 1024 * 1024;
+module_param(bufunitsize, int, S_IRUGO);
+MODULE_PARM_DESC(bufunitsize, " Size of each buffer unit [default 4 MB]");
 
 /* Allocate DMA buffers for the PRU
  * This method acquires & releases the device mutex */
@@ -1065,7 +1070,7 @@ static const struct of_device_id beaglelogic_dt_ids[] = {
 
 static struct platform_driver beaglelogic_driver = {
 	.driver = {
-		.name = "beaglelogic",
+		.name = DRV_NAME,
 		.owner = THIS_MODULE,
 		.of_match_table = beaglelogic_dt_ids,
 	},
@@ -1075,6 +1080,7 @@ static struct platform_driver beaglelogic_driver = {
 
 module_platform_driver(beaglelogic_driver);
 
-MODULE_DESCRIPTION("Kernel Driver for BeagleLogic");
 MODULE_AUTHOR("Kumar Abhishek <abhishek@theembeddedkitchen.net>");
+MODULE_DESCRIPTION("Kernel Driver for BeagleLogic");
 MODULE_LICENSE("GPL");
+MODULE_VERSION(DRV_VERSION);
