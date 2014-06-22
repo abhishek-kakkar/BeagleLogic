@@ -2,6 +2,9 @@
 # * Builds only with CLPRU 2.0.0B* and above
 # * Set PRU_C_DIR to "<path-to-clpru>/include;<path-to-clpru>/lib"
 
+# BBB hostname
+BBHOST = root@192.168.7.2
+
 # Tools to be used
 CC=clpru
 LD=lnkpru
@@ -54,8 +57,12 @@ beaglelogic-pru1.elf.lst: beaglelogic-pru1
 	@echo "  DUMP	$@"
 	@$(OBJDUMP) -1 $< > $@
 
-install:
+install-frombb: beaglelogic-pru0 beaglelogic-pru1
 	cp -t /lib/firmware beaglelogic-pru0 beaglelogic-pru1
+
+install-tobb: beaglelogic-pru0 beaglelogic-pru1
+	scp -q beaglelogic-pru0 $(BBHOST):/lib/firmware
+	scp -q beaglelogic-pru1 $(BBHOST):/lib/firmware
 
 clean:
 	rm -f *.obj *.lst *.s beaglelogic-pru0 beaglelogic-pru1
