@@ -463,7 +463,8 @@ int beaglelogic_write_configuration(struct device *dev)
 }
 
 /* Begin the sampling operation [This takes the mutex] */
-int beaglelogic_start(struct device *dev) {
+int beaglelogic_start(struct device *dev)
+{
 	struct beaglelogicdev *bldev = dev_get_drvdata(dev);
 
 	/* This mutex will be locked for the entire duration BeagleLogic runs */
@@ -473,14 +474,18 @@ int beaglelogic_start(struct device *dev) {
 		return -1;
 	}
 	bldev->bufbeingread = &bldev->buffers[0];
-
 	bldev->pru_start(0);
-
 	bldev->downcall_idx(0, BL_DC_SM_ARM, 0, 0, 0, 0, 0);
 
 	/* All set now. Start the PRUs and wait for IRQs */
-
 	bldev->state = STATE_BL_RUNNING;
+	bldev->lasterror = 0;
+
+	dev_info(dev, "capture started with sample rate=%d Hz, sampleunit=%d, "\
+			"triggerflags=%d",
+			bldev->samplerate,
+			bldev->sampleunit,
+			bldev->triggerflags);
 	return 0;
 }
 
@@ -499,6 +504,8 @@ void beaglelogic_stop(struct device *dev)
 
 		/* Release */
 		mutex_unlock(&bldev->mutex);
+
+		dev_info(dev, "capture session ended\n");
 	}
 }
 
