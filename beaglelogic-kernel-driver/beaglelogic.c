@@ -417,8 +417,13 @@ int beaglelogic_serve_irq(int irqno, void *data)
 		/* Manage the buffers */
 		beaglelogic_unmap_buffer(dev,
 			bldev->lastbufready = bldev->bufbeingread);
-		beaglelogic_map_buffer(dev,
-			bldev->bufbeingread = bldev->bufbeingread->next);
+
+		/* Avoid a false buffer overrun warning on the last run */
+		if (bldev->triggerflags != BL_TRIGGERFLAGS_ONESHOT ||
+			bldev->bufbeingread->next->index != 0) {
+			beaglelogic_map_buffer(dev,
+				bldev->bufbeingread = bldev->bufbeingread->next);
+		}
 		wake_up_interruptible(&bldev->wait);
 	} else if (irqno == BL_IRQ_CLEANUP) {
 		/* This interrupt occurs twice:
@@ -523,7 +528,7 @@ static int beaglelogic_f_open(struct inode *inode, struct file *filp)
 	return 0;
 }
 
-/* Read the sample (ring) buffer */
+/* Read the sample (ring) buffer. TODO Implement Nonblock */
 ssize_t beaglelogic_f_read (struct file *filp, char __user *buf,
                           size_t sz, loff_t *offset)
 {
@@ -538,8 +543,13 @@ ssize_t beaglelogic_f_read (struct file *filp, char __user *buf,
 	if (reader->remaining > 0)
 		goto perform_copy;
 
-	if (reader->buf)
+	if (reader->buf) {
+		if (bldev->state == STATE_BL_INITIALIZED &&
+				bldev->lastbufready == reader->buf)
+			return 0;
+
 		reader->buf = reader->buf->next;
+	}
 	else {
 		/* (re)trigger */
 		if (beaglelogic_start(dev))
@@ -550,13 +560,21 @@ ssize_t beaglelogic_f_read (struct file *filp, char __user *buf,
 	reader->pos = 0;
 	reader->remaining = reader->buf->size;
 
-	/* Wait for the ISR to become available */
 	dev_dbg(dev, "waiting for IRQ\n");
 	wait_event_interruptible(bldev->wait,
 			reader->buf->state == STATE_BL_BUF_UNMAPPED);
 	dev_dbg(dev, "got IRQ\n");
 perform_copy:
 	count = min(reader->remaining, sz);
+
+	/* Detect buffer drop */
+	if (reader->buf->state == STATE_BL_BUF_MAPPED) {
+		dev_warn(dev, "buffer dropped at index %d \n",
+				reader->buf->index);
+		reader->buf->state = STATE_BL_BUF_DROPPED;
+		bldev->lasterror = 0x10000 | reader->buf->index;
+	}
+
 	if (copy_to_user(buf, reader->buf->buf + reader->pos, count))
 		return -EFAULT;
 
