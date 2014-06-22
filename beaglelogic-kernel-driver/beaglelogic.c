@@ -759,7 +759,7 @@ static ssize_t bl_memalloc_show(struct device *dev,
 }
 
 static ssize_t bl_memalloc_store(struct device *dev,
-        struct device_attribute *attr, const char *buf, size_t count) {
+        struct device_attribute *attr, const char *buf, size_t count)
 {
 	struct beaglelogicdev *bldev = dev_get_drvdata(dev);
 	u32 val;
@@ -801,9 +801,6 @@ static ssize_t bl_samplerate_store(struct device *dev,
 	if (beaglelogic_set_samplerate(dev, val))
 		return -EINVAL;
 
-	dev_info(dev, "BeagleLogic sample rate set to %d Hz\n",
-			beaglelogic_get_samplerate(dev));
-
 	return count;
 }
 
@@ -822,12 +819,7 @@ static ssize_t bl_sampleunit_show(struct device *dev,
 		case 1:
 			cnt += scnprintf(buf, PAGE_SIZE, "16bit,norle\n");
 			break;
-
-		case 2:
-			cnt += scnprintf(buf, PAGE_SIZE, "12bit,rle16\n");
-			break;
 	}
-
 	return cnt;
 }
 
@@ -850,8 +842,14 @@ static ssize_t bl_sampleunit_store(struct device *dev,
 static ssize_t bl_triggerflags_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
-	return scnprintf(buf, PAGE_SIZE, "%d, RFU.\n",
-			beaglelogic_get_triggerflags(dev));
+	switch (beaglelogic_get_triggerflags(dev)) {
+		case BL_TRIGGERFLAGS_ONESHOT:
+			return scnprintf(buf, PAGE_SIZE, "0:oneshot\n");
+
+		case BL_TRIGGERFLAGS_CONTINUOUS:
+			return scnprintf(buf, PAGE_SIZE, "1:continuous\n");
+	}
+	return 0;
 }
 
 static ssize_t bl_triggerflags_store(struct device *dev,
@@ -881,7 +879,6 @@ static ssize_t bl_state_show(struct device *dev,
 		wait_event_interruptible(bldev->wait,
 				buffer->state == STATE_BL_BUF_UNMAPPED);
 		return scnprintf(buf, PAGE_SIZE, "%d\n", buffer->index);
-			"%d\n", bldev->lastbufready->index);
 	}
 
 	/* Identify non-buffer debug states with a -ve value */
@@ -925,6 +922,18 @@ static ssize_t bl_buffers_show(struct device *dev,
 	return cnt;
 }
 
+static ssize_t bl_lasterror_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	struct beaglelogicdev *bldev = dev_get_drvdata(dev);
+
+	wait_event_interruptible(bldev->wait,
+			bldev->state != STATE_BL_RUNNING);
+
+
+	return scnprintf(buf, PAGE_SIZE, "%d\n", bldev->lasterror);
+}
+
 static ssize_t bl_testpattern_store(struct device *dev,
 		struct device_attribute *attr, const char *buf, size_t count)
 {
@@ -934,9 +943,8 @@ static ssize_t bl_testpattern_store(struct device *dev,
 		return -EINVAL;
 
 	/* Only if we get the magic number, trigger the test pattern */
-	if (val == 12345678) {
+	if (val == 12345678)
 		beaglelogic_fill_buffer_testpattern(dev);
-	}
 
 	return count;
 }
@@ -956,7 +964,7 @@ static DEVICE_ATTR(triggerflags, S_IWUSR | S_IRUGO,
 static DEVICE_ATTR(state, S_IWUSR | S_IRUGO,
 		bl_state_show, bl_state_store);
 
-static DEVICE_ATTR(buffers, S_IRUSR,
+static DEVICE_ATTR(buffers, S_IRUGO,
 		bl_buffers_show, NULL);
 
 static DEVICE_ATTR(filltestpattern, S_IWUSR,
