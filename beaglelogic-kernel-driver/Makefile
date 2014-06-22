@@ -17,7 +17,7 @@ clean:
 
 # Compile and install device tree
 devicetree:
-	dtc -O dtb -o /lib/firmware/bb-beaglelogic-00A0.dtbo -b 0 -@ bb-beaglelogic.dts
+	dtc -O dtb -o /lib/firmware/BB-BEAGLELOGIC-00A0.dtbo -b 0 -@ BB-BEAGLELOGIC-00A0.dts
 
 # Install the PRU firmware
 firmware:
