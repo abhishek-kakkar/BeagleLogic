@@ -609,7 +609,8 @@ static long beaglelogic_f_ioctl(struct file *filp, unsigned int cmd,
 
 	u32 val;
 
-	printk("BeagleLogic: IOCTL called cmd = %08X, arg = %08lX\n", cmd, arg);
+	dev_info(dev, "BeagleLogic: IOCTL called cmd = %08X, "\
+			"arg = %08lX\n", cmd, arg);
 
 	switch (cmd) {
 		case IOCTL_BL_GET_VERSION:
@@ -663,6 +664,28 @@ static long beaglelogic_f_ioctl(struct file *filp, unsigned int cmd,
 				beaglelogic_unmap_buffer(dev,
 						&bldev->buffers[val]);
 			}
+			return 0;
+
+		case IOCTL_BL_GET_BUFFER_SIZE:
+			val = bldev->bufunitsize * bldev->bufcount;
+			if (copy_to_user((void * __user)arg,
+					&val,
+					sizeof(val)))
+				return -EFAULT;
+			return 0;
+
+		case IOCTL_BL_SET_BUFFER_SIZE:
+			beaglelogic_memfree(dev);
+			val = beaglelogic_memalloc(dev, arg);
+			if (!val)
+				return beaglelogic_map_and_submit_all_buffers(dev);
+			return 0;
+
+		case IOCTL_BL_GET_BUFUNIT_SIZE:
+			if (copy_to_user((void * __user)arg,
+					&bldev->bufunitsize,
+					sizeof(bldev->bufunitsize)))
+				return -EFAULT;
 			return 0;
 
 		case IOCTL_BL_FILL_TEST_PATTERN:
