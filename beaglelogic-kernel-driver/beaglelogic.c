@@ -138,6 +138,7 @@ struct beaglelogicdev {
 
 	/* State */
 	u32 state;
+	u32 lasterror;
 };
 
 typedef struct bufreader {
@@ -962,6 +963,9 @@ static DEVICE_ATTR(state, S_IWUSR | S_IRUGO,
 static DEVICE_ATTR(buffers, S_IRUGO,
 		bl_buffers_show, NULL);
 
+static DEVICE_ATTR(lasterror, S_IRUGO,
+		bl_lasterror_show, NULL);
+
 static DEVICE_ATTR(filltestpattern, S_IWUSR,
 		NULL, bl_testpattern_store);
 
@@ -972,6 +976,7 @@ static struct attribute *beaglelogic_attributes[] = {
 	&dev_attr_triggerflags.attr,
 	&dev_attr_state.attr,
 	&dev_attr_buffers.attr,
+	&dev_attr_lasterror.attr,
 	&dev_attr_filltestpattern.attr,
 	NULL
 };
