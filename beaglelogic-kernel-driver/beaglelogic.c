@@ -176,8 +176,9 @@ static int beaglelogic_memalloc(struct device *dev, u32 bufsize)
 	if (!mutex_trylock(&bldev->mutex))
 		return -EBUSY;
 
-	/* Compute no. of buffers to allocate, round up */
-	cnt = DIV_ROUND_UP(bufsize, bldev->bufunitsize);
+	/* Compute no. of buffers to allocate, round up
+	 * We need at least two buffers for ping-pong action */
+	cnt = max(DIV_ROUND_UP(bufsize, bldev->bufunitsize), (u32)2);
 
 	/* Too large? */
 	if (cnt > bldev->maxbufcount) {
@@ -322,7 +323,8 @@ static int beaglelogic_map_and_submit_all_buffers(struct device *dev)
 	pru_buflist[i].dma_end_addr = 0;
 
 	/* Update state to ready */
-	bldev->state = STATE_BL_ARMED;
+	if (i)
+		bldev->state = STATE_BL_ARMED;
 
 	return 0;
 fail:
@@ -716,8 +718,10 @@ static ssize_t bl_memalloc_show(struct device *dev,
 
 static ssize_t bl_memalloc_store(struct device *dev,
         struct device_attribute *attr, const char *buf, size_t count) {
-	u32 val;
+{
 	struct beaglelogicdev *bldev = dev_get_drvdata(dev);
+	u32 val;
+	int ret;
 
 	if (kstrtouint(buf, 10, &val))
 		return -EINVAL;
@@ -728,7 +732,10 @@ static ssize_t bl_memalloc_store(struct device *dev,
 
 	/* Free buffers and reallocate */
 	beaglelogic_memfree(dev);
-	beaglelogic_memalloc(dev, val);
+	ret = beaglelogic_memalloc(dev, val);
+
+	if (!ret && val)
+		beaglelogic_map_and_submit_all_buffers(dev);
 
 	return count;
 }
