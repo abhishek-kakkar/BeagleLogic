@@ -704,6 +704,24 @@ static long beaglelogic_f_ioctl(struct file *filp, unsigned int cmd,
 	return -ENOTTY;
 }
 
+/* llseek to offset zero resets the LA */
+static loff_t beaglelogic_f_llseek(struct file *filp, loff_t offset, int whence)
+{
+	logic_buffer_reader *reader = filp->private_data;
+	struct device *dev = reader->bldev->miscdev.this_device;
+	if (whence == SEEK_SET && offset == 0) {
+		/* The next read triggers the LA */
+		reader->buf = NULL;
+		reader->pos = 0;
+		reader->remaining = 0;
+
+		/* Stop and map the first buffer */
+		beaglelogic_stop(dev);
+		beaglelogic_map_buffer(dev, &reader->bldev->buffers[0]);
+	}
+	return -EINVAL;
+}
+
 /* Device file close handler */
 static int beaglelogic_f_release(struct inode *inode, struct file *filp)
 {
@@ -724,6 +742,7 @@ static const struct file_operations pru_beaglelogic_fops = {
 	.open = beaglelogic_f_open,
 	.unlocked_ioctl = beaglelogic_f_ioctl,
 	.read = beaglelogic_f_read,
+	.llseek = beaglelogic_f_llseek,
 	.mmap = beaglelogic_f_mmap,
 	.release = beaglelogic_f_release,
 };
