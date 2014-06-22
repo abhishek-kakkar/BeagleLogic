@@ -937,11 +937,11 @@ static struct attribute_group beaglelogic_attr_group = {
 
 static int beaglelogic_probe(struct platform_device *pdev)
 {
+	struct device_node *node = pdev->dev.of_node;
 	int err, ret;
 	struct beaglelogicdev *bldev;
 	struct device *dev;
-
-//	struct device *ppdev; // TODO implement device tree configuration
+	u32 val;
 
 	printk("BeagleLogic loaded and initializing\n");
 
@@ -1020,15 +1020,41 @@ static int beaglelogic_probe(struct platform_device *pdev)
 	}
 
 
-	/* Apply default configuration
-	 * TODO Apply configuration from device tree structure */
+	/* Apply default configuration first */
 	bldev->samplerate = 100 * 1000 * 1000;
-	bldev->sampleunit = 0;
+	bldev->sampleunit = 1;
 	bldev->bufunitsize = 4 * 1024 * 1024;
 	bldev->triggerflags = 0;
 
+	/* Override defaults with the device tree */
+	if (!of_property_read_u32(node, "samplerate", &val))
+		if (beaglelogic_set_samplerate(dev, val))
+			dev_warn(dev, "Invalid default samplerate\n");
+
+	if (!of_property_read_u32(node, "sampleunit", &val))
+		if (beaglelogic_set_sampleunit(dev, val))
+			dev_warn(dev, "Invalid default sampleunit\n");
+
+	if (!of_property_read_u32(node, "triggerflags", &val))
+		if (beaglelogic_set_triggerflags(dev, val))
+			dev_warn(dev, "Invalid default triggerflags\n");
+
+	if (bufunitsize < 2 * 1024 * 1024)
+		dev_warn(dev, "WARNING:Buffer unit sizes less than "\
+				"2 MB are not recommended. Using 4 MB");
+	else
+		bldev->bufunitsize = bufunitsize;
+
 	/* We got configuration from PRUs, now mark device init'd */
 	bldev->state = STATE_BL_INITIALIZED;
+
+	/* Display our init'ed state */
+	dev_info(dev, "Default sample rate=%d Hz, sampleunit=%d, "\
+			"triggerflags=%d. Buffer in units of %d bytes each",
+			bldev->samplerate,
+			bldev->sampleunit,
+			bldev->triggerflags,
+			bldev->bufunitsize);
 
 	/* Once done, create device files */
 	err = sysfs_create_group(&dev->kobj, &beaglelogic_attr_group);
