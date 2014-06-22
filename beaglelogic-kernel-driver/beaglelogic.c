@@ -44,15 +44,15 @@
 #include "beaglelogic_glue.h"
 
 /* Buffer states */
-enum {
+enum bufstates {
 	STATE_BL_BUF_ALLOC,
 	STATE_BL_BUF_MAPPED,
-	STATE_BL_BUF_READ,
-	STATE_BL_BUF_UNMAPPED
+	STATE_BL_BUF_UNMAPPED,
+	STATE_BL_BUF_DROPPED
 };
 
 /* PRU Downcall API */
-#define BL_DC_GET_VERSION   	0   /* Firmware */
+#define BL_DC_GET_VERSION	0   /* Firmware */
 #define BL_DC_GET_MAX_SG	1   /* Get the Max number of SG entries */
 #define BL_DC_GET_CXT_PTR	2   /* Get the context pointer */
 #define BL_DC_SM_RATE		3   /* Get/set rate = (200 / n) MHz, n = 2... */
@@ -113,11 +113,7 @@ struct beaglelogicdev {
 	/* Private data */
 	struct device *p_dev; /* Parent platform device */
 
-	/* Kernel reference - persist till the last file is unloaded TODO */
-	struct kref ref;
-
 	/* Locks */
-	spinlock_t lock;
 	struct mutex mutex;
 
 	/* Buffer management */
@@ -126,7 +122,6 @@ struct beaglelogicdev {
 	logic_buffer *bufbeingread;
 	u32 bufcount;
 	wait_queue_head_t wait;
-	spinlock_t buflock;
 
 	/* ISR Bookkeeping */
 	u32 previntcount;	/* Previous interrupt count read from PRU */
@@ -137,9 +132,9 @@ struct beaglelogicdev {
 	/* Device capabilities */
 	u32 bufunitsize;  	/* Size of 1 Allocation unit */
 	u32 maxbufcount;	/* Max buffer count supported by the PRU FW */
-	u32 samplerate; 	/* Sample rate = 200 / n MHz, n = 2+ (int) */
-	u32 triggerflags;	/* bit 0 : ~1shot/continuous */
-	u32 sampleunit; 	/* 0:8bits, 1:16bits, 2:12bit+RLE16[TBD] */
+	u32 samplerate; 	/* Sample rate = 100 / n MHz, n = 2+ (int) */
+	u32 triggerflags;	/* bit 0 : 1shot/!continuous */
+	u32 sampleunit; 	/* 0:8bits, 1:16bits */
 
 	/* State */
 	u32 state;
@@ -156,8 +151,8 @@ typedef struct bufreader {
 #define to_beaglelogicdev(dev)	container_of((dev), \
 		struct beaglelogicdev, miscdev)
 
-#define DRV_NAME 	"beaglelogic"
-#define DRV_VERSION 	"1.0"
+#define DRV_NAME	"beaglelogic"
+#define DRV_VERSION	"1.0"
 
 /* Begin Buffer Management section */
 static int bufunitsize = 4 * 1024 * 1024;
@@ -1028,8 +1023,6 @@ static int beaglelogic_probe(struct platform_device *pdev)
 	/* Set up locks */
 	mutex_init(&bldev->mutex);
 	init_waitqueue_head(&bldev->wait);
-	spin_lock_init(&bldev->lock);
-	spin_lock_init(&bldev->buflock);
 
 	/* Power on in disabled state */
 	bldev->state = STATE_BL_DISABLED;
