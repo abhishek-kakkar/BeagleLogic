@@ -874,17 +874,18 @@ static ssize_t bl_state_show(struct device *dev,
 {
 	struct beaglelogicdev *bldev = dev_get_drvdata(dev);
 	u32 state = bldev->state;
+	logic_buffer *buffer = bldev->bufbeingread;
 
 	if (state == STATE_BL_RUNNING) {
 		/* State blocks and returns last buffer read */
 		wait_event_interruptible(bldev->wait,
-			bldev->bufbeingread->state == STATE_BL_BUF_UNMAPPED);
-		return scnprintf(buf, PAGE_SIZE,
+				buffer->state == STATE_BL_BUF_UNMAPPED);
+		return scnprintf(buf, PAGE_SIZE, "%d\n", buffer->index);
 			"%d\n", bldev->lastbufready->index);
 	}
 
 	/* Identify non-buffer debug states with a -ve value */
-	return scnprintf(buf, PAGE_SIZE, "a%d\n", -bldev->state);
+	return scnprintf(buf, PAGE_SIZE, "-%d\n", -bldev->state);
 }
 
 static ssize_t bl_state_store(struct device *dev,
@@ -899,11 +900,11 @@ static ssize_t bl_state_store(struct device *dev,
 	if (val > 1)
 		return -EINVAL;
 
-	if (val == 1) {
+	if (val == 1)
 		beaglelogic_start(dev);
-	} else if (val == 0) {
+	else
 		beaglelogic_stop(dev);
-	}
+
 	return count;
 }
 
