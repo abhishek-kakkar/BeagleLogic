@@ -431,7 +431,7 @@ int beaglelogic_serve_irq(int irqno, void *data)
 		 *  2. After the last buffer transferred  */
 		state = bldev->state;
 		if (state <= STATE_BL_ARMED) {
-			dev_info(dev, "config written, BeagleLogic ready\n");
+			dev_dbg(dev, "config written, BeagleLogic ready\n");
 			return IRQ_HANDLED;
 		}
 		else if (state != STATE_BL_REQUEST_STOP &&
@@ -458,7 +458,7 @@ int beaglelogic_write_configuration(struct device *dev)
 			(bldev->coreclockfreq / 2) / bldev->samplerate,
 			bldev->sampleunit, bldev->triggerflags, 0, 0);
 
-	dev_info(dev, "PRU Config written, err code = %d\n", i);
+	dev_dbg(dev, "PRU Config written, err code = %d\n", i);
 	return 0;
 }
 
@@ -520,7 +520,6 @@ static int beaglelogic_f_open(struct inode *inode, struct file *filp)
 		return -ENOMEM;
 
 	reader = devm_kzalloc(dev, sizeof(*reader), GFP_KERNEL);
-
 	reader->bldev = bldev;
 	reader->buf = NULL;
 	reader->pos = 0;
@@ -602,9 +601,6 @@ int beaglelogic_f_mmap(struct file *filp, struct vm_area_struct *vma)
 
 	if (vma->vm_end - vma->vm_start > bldev->bufunitsize * bldev->bufcount)
 		return -EINVAL;
-
-//	if (vma->vm_page_prot & (PROT_WRITE | PROT_EXEC))
-//		return -EPERM;
 
 	for (i = 0; i < bldev->bufcount; i++) {
 		ret = remap_pfn_range(vma, addr,
