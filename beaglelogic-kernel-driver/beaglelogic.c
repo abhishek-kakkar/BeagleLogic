@@ -755,8 +755,13 @@ unsigned int beaglelogic_f_poll(struct file *filp,
 {
 	logic_buffer_reader *reader = filp->private_data;
 	struct beaglelogicdev *bldev = reader->bldev;
-	logic_buffer *buf = bldev->bufbeingread;
+	logic_buffer *buf;
 
+	if (reader->buf == NULL && bldev->state != STATE_BL_RUNNING)
+		if (beaglelogic_start(bldev->miscdev.this_device))
+			return -ENOEXEC;
+
+	buf = bldev->bufbeingread;
 	poll_wait(filp, &bldev->wait, tbl);
 
 	if (buf->state == STATE_BL_BUF_UNMAPPED)
