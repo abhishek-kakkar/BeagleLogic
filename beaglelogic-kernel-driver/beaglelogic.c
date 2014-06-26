@@ -349,7 +349,7 @@ u32 beaglelogic_get_samplerate(struct device *dev)
 int beaglelogic_set_samplerate(struct device *dev, u32 samplerate)
 {
 	struct beaglelogicdev *bldev = dev_get_drvdata(dev);
-	if (samplerate > bldev->coreclockfreq / 2 || samplerate < 100000)
+	if (samplerate > bldev->coreclockfreq / 2 || samplerate < 1)
 		return -EINVAL;
 
 	if (mutex_trylock(&bldev->mutex)) {
