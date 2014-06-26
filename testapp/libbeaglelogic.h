@@ -57,11 +57,6 @@ enum beaglelogic_sampleunit {
 	BL_SAMPLEUNIT_8_BITS
 };
 
-/* This is the public API for BeagleLogic
- * It is highly recommended to use these functions to set attributes of
- * BeagleLogic instead of making syscalls.
- */
-
 /* Open and close functions */
 extern int beaglelogic_open(void);
 int beaglelogic_close(int fd);
