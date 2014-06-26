@@ -88,7 +88,7 @@ int beaglelogic_read(int fd, void *buf, size_t bytes) {
 }
 
 int beaglelogic_get_buffersize(int fd, uint32_t *bufsize) {
-	return ioctl(fd, IOCTL_BL_GET_BUFFER_SIZE, &bufsize);
+	return ioctl(fd, IOCTL_BL_GET_BUFFER_SIZE, bufsize);
 }
 
 int beaglelogic_set_buffersize(int fd, uint32_t bufsize) {
@@ -96,7 +96,7 @@ int beaglelogic_set_buffersize(int fd, uint32_t bufsize) {
 }
 
 int beaglelogic_get_samplerate(int fd, uint32_t *samplerate) {
-	return ioctl(fd, IOCTL_BL_GET_SAMPLE_RATE, &samplerate);
+	return ioctl(fd, IOCTL_BL_GET_SAMPLE_RATE, samplerate);
 }
 
 int beaglelogic_set_samplerate(int fd, uint32_t samplerate) {
@@ -105,7 +105,7 @@ int beaglelogic_set_samplerate(int fd, uint32_t samplerate) {
 
 int beaglelogic_get_sampleunit(int fd,
 		enum beaglelogic_sampleunit *sampleunit) {
-	return ioctl(fd, IOCTL_BL_GET_SAMPLE_UNIT, &sampleunit);
+	return ioctl(fd, IOCTL_BL_GET_SAMPLE_UNIT, sampleunit);
 }
 
 int beaglelogic_set_sampleunit(int fd,
@@ -115,7 +115,7 @@ int beaglelogic_set_sampleunit(int fd,
 
 int beaglelogic_get_triggerflags(int fd,
 		enum beaglelogic_triggerflags *triggerflags) {
-	return ioctl(fd, IOCTL_BL_GET_TRIGGER_FLAGS, &triggerflags);
+	return ioctl(fd, IOCTL_BL_GET_TRIGGER_FLAGS, triggerflags);
 }
 
 int beaglelogic_set_triggerflags(int fd,
