@@ -528,9 +528,12 @@ static int beaglelogic_f_open(struct inode *inode, struct file *filp)
 
 	filp->private_data = reader;
 
-	/* Map and submit all the buffers */
-	if (beaglelogic_map_and_submit_all_buffers(dev))
+	/* The buffers will be mapped/resubmitted at the time of allocation
+	 * Here, we just map the first buffer */
+	if (!bldev->buffers)
 		return -ENOMEM;
+
+	beaglelogic_map_buffer(dev, &bldev->buffers[0]);
 
 	return 0;
 }
@@ -550,11 +553,6 @@ ssize_t beaglelogic_f_read (struct file *filp, char __user *buf,
 	if (reader->pos > 0)
 		goto perform_copy;
 
-	/* EOF Condition, back to buffer 0 and stopped */
-	if (reader->buf == bldev->buffers &&
-			bldev->state == STATE_BL_INITIALIZED)
-		return 0;
-
 	if (reader->buf == NULL) {
 		/* First time init */
 		reader->buf = &reader->bldev->buffers[0];
@@ -565,6 +563,11 @@ ssize_t beaglelogic_f_read (struct file *filp, char __user *buf,
 			if (beaglelogic_start(dev))
 				return -ENOEXEC;
 		}
+	} else {
+		/* EOF Condition, back to buffer 0 and stopped */
+		if (reader->buf == bldev->buffers &&
+				bldev->state == STATE_BL_INITIALIZED)
+			return 0;
 	}
 
 	if (filp->f_flags & O_NONBLOCK) {
