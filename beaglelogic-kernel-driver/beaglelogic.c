@@ -718,6 +718,11 @@ static long beaglelogic_f_ioctl(struct file *filp, unsigned int cmd,
 			return 0;
 
 		case IOCTL_BL_START:
+			/* Reset and reconfigure the reader object and then start */
+			reader->buf = &bldev->buffers[0];
+			reader->pos = 0;
+			reader->remaining = reader->buf->size;
+
 			beaglelogic_start(dev);
 			return 0;
 
