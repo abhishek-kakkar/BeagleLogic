@@ -78,6 +78,10 @@ int beaglelogic_open(void) {
 	return open(BEAGLELOGIC_DEV_NODE, O_RDONLY);
 }
 
+int beaglelogic_open_nonblock(void) {
+	return open(BEAGLELOGIC_DEV_NODE, O_RDONLY | O_NONBLOCK);
+}
+
 int beaglelogic_close(int fd) {
 	return close(fd);
 }

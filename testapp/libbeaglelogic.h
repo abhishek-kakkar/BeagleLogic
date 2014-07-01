@@ -59,7 +59,8 @@ enum beaglelogic_sampleunit {
 
 /* Open and close functions */
 extern int beaglelogic_open(void);
-int beaglelogic_close(int fd);
+extern int beaglelogic_open_nonblock(void);
+extern int beaglelogic_close(int fd);
 
 /* Read from the BeagleLogic file */
 int beaglelogic_read(int fd, void *buf, size_t bytes);
