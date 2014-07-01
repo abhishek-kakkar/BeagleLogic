@@ -166,7 +166,7 @@ void * beaglelogic_mmap(int fd) {
 	if (beaglelogic_get_buffersize(fd, &sz))
 		return MAP_FAILED;
 
-	addr = mmap(NULL, sz, PROT_READ, MAP_PRIVATE, fd, 0);
+	addr = mmap(NULL, sz, PROT_READ, MAP_SHARED, fd, 0);
 
 	return addr;
 }
