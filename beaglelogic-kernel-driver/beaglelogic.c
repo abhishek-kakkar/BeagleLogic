@@ -418,13 +418,8 @@ int beaglelogic_serve_irq(int irqno, void *data)
 		/* Manage the buffers */
 		beaglelogic_unmap_buffer(dev,
 			bldev->lastbufready = bldev->bufbeingread);
-
-		/* Avoid a false buffer overrun warning on the last run */
-		if (bldev->triggerflags != BL_TRIGGERFLAGS_ONESHOT ||
-			bldev->bufbeingread->next->index != 0) {
-			beaglelogic_map_buffer(dev,
+		beaglelogic_map_buffer(dev,
 				bldev->bufbeingread = bldev->bufbeingread->next);
-		}
 		wake_up_interruptible(&bldev->wait);
 	} else if (irqno == BL_IRQ_CLEANUP) {
 		/* This interrupt occurs twice:
