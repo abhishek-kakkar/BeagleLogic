@@ -760,15 +760,15 @@ unsigned int beaglelogic_f_poll(struct file *filp,
 	struct beaglelogicdev *bldev = reader->bldev;
 	logic_buffer *buf;
 
+	/* Raise an error if polled without starting the LA first */
 	if (reader->buf == NULL && bldev->state != STATE_BL_RUNNING)
-		if (beaglelogic_start(bldev->miscdev.this_device))
-			return -ENOEXEC;
+		return -ENOEXEC;
 
-	buf = bldev->bufbeingread;
-	poll_wait(filp, &bldev->wait, tbl);
-
+	buf = reader->buf;
 	if (buf->state == STATE_BL_BUF_UNMAPPED)
 		return (POLLIN | POLLRDNORM);
+
+	poll_wait(filp, &bldev->wait, tbl);
 
 	return 0;
 }
