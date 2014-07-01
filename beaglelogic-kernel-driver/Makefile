@@ -8,7 +8,7 @@ KSRC = $(PWD)/../../BeagleBone/kernel/kernel
 BBHOST = root@192.168.7.2
 
 # Module targets (run from host)
-obj-m := beaglelogic.o pru_rproc_bl.o
+obj-m := beaglelogic.o
 
 all:
 	@make -C $(KSRC) M=$(PWD) ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- modules
