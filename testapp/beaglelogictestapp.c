@@ -113,8 +113,8 @@ int main(int argc, char **argv)
 
 	/* Configure capture settings */
 	clock_gettime(CLOCK_MONOTONIC, &t1);
-	beaglelogic_set_samplerate(bfd, 100 * 1000 * 1000);
-	beaglelogic_set_sampleunit(bfd, BL_SAMPLEUNIT_16_BITS);
+	beaglelogic_set_samplerate(bfd, 50 * 1000 * 1000);
+	beaglelogic_set_sampleunit(bfd, BL_SAMPLEUNIT_8_BITS);
 	beaglelogic_set_triggerflags(bfd, BL_TRIGGERFLAGS_CONTINUOUS);
 	clock_gettime(CLOCK_MONOTONIC, &t2);
 	printf("Configured in %jd us\n", timediff(&t1, &t2));
