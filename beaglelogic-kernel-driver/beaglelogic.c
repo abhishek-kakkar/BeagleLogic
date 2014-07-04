@@ -131,8 +131,8 @@ struct beaglelogicdev {
 	ccontext *cxt_pru;
 
 	/* Device capabilities */
-	u32 bufunitsize;  	/* Size of 1 Allocation unit */
 	u32 maxbufcount;	/* Max buffer count supported by the PRU FW */
+	u32 bufunitsize;  	/* Size of 1 Allocation unit */
 	u32 samplerate; 	/* Sample rate = 100 / n MHz, n = 2+ (int) */
 	u32 triggerflags;	/* bit 0 : 1shot/!continuous */
 	u32 sampleunit; 	/* 0:8bits, 1:16bits */
@@ -743,7 +743,36 @@ static long beaglelogic_f_ioctl(struct file *filp, unsigned int cmd,
 static loff_t beaglelogic_f_llseek(struct file *filp, loff_t offset, int whence)
 {
 	logic_buffer_reader *reader = filp->private_data;
-	struct device *dev = reader->bldev->miscdev.this_device;
+	struct beaglelogicdev *bldev = reader->bldev;
+	struct device *dev = bldev->miscdev.this_device;
+
+	loff_t i = offset;
+	u32 j;
+
+	if (whence == SEEK_CUR) {
+		while (i > 0) {
+			if (reader->buf->state == STATE_BL_BUF_MAPPED) {
+				dev_warn(dev, "buffer may be dropped at index %d \n",
+						reader->buf->index);
+				reader->buf->state = STATE_BL_BUF_DROPPED;
+				bldev->lasterror = 0x10000 | reader->buf->index;
+			}
+
+			j = min((u32)i, reader->remaining);
+			reader->pos += j;
+
+			if ((reader->remaining -= j) == 0) {
+				/* Change the buffer */
+				reader->buf = reader->buf->next;
+				reader->pos = 0;
+				reader->remaining = reader->buf->size;
+			}
+
+			i -= j;
+		}
+		return offset;
+	}
+
 	if (whence == SEEK_SET && offset == 0) {
 		/* The next read triggers the LA */
 		reader->buf = NULL;
@@ -753,7 +782,10 @@ static loff_t beaglelogic_f_llseek(struct file *filp, loff_t offset, int whence)
 		/* Stop and map the first buffer */
 		beaglelogic_stop(dev);
 		beaglelogic_map_buffer(dev, &reader->bldev->buffers[0]);
+
+		return 0;
 	}
+
 	return -EINVAL;
 }
 
