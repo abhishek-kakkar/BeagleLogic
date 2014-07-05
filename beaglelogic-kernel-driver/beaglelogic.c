@@ -579,7 +579,7 @@ ssize_t beaglelogic_f_read (struct file *filp, char __user *buf,
 perform_copy:
 	count = min(reader->remaining, sz);
 
-	if (buf && copy_to_user(buf, reader->buf->buf + reader->pos, count))
+	if (copy_to_user(buf, reader->buf->buf + reader->pos, count))
 		return -EFAULT;
 
 	/* Detect buffer drop */
