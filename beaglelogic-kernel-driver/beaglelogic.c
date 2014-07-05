@@ -154,7 +154,7 @@ typedef struct bufreader {
 		struct beaglelogicdev, miscdev)
 
 #define DRV_NAME	"beaglelogic"
-#define DRV_VERSION	"1.0"
+#define DRV_VERSION	"1.1"
 
 /* Begin Buffer Management section */
 static int bufunitsize = 4 * 1024 * 1024;
