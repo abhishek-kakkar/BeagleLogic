@@ -2,7 +2,7 @@
 # This file is a part of the BeagleLogic project
 
 # Path to kernel sources relative to current directory
-KSRC = $(PWD)/../../BeagleBone/kernel/kernel
+KSRC = /lib/modules/$(shell uname -r)/build
 
 # Host name of BBB (like root@192.168.7.2)
 BBHOST = root@192.168.7.2
