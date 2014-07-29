@@ -1,0 +1,33 @@
+{
+  "name": "beaglelogic-webapp",
+  "version": "0.0.2",
+  "private": true,
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "express": "3.2.6",
+    "socket.io": "1.x",
+    "marked": "~0.3.2",
+    "lz4": "~0.3.11"
+  },
+  "description": "A logic analyzer for the BeagleBone Black",
+  "main": "app.js",
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/abhishek-kakkar/BeagleLogic"
+  },
+  "keywords": [
+    "beaglebone",
+    "pru",
+    "logic",
+    "analyzer",
+    "beagleboard"
+  ],
+  "author": "Kumar Abhishek",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/abhishek-kakkar/BeagleLogic/issues"
+  }
+}
