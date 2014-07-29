@@ -33,6 +33,7 @@ License
  * **PRU firmware & Device tree overlay** : GPLv2
  * **Kernel Module**: GPLv2+
  * **sigrok bindings**: GPLv3+
+ * **Web interface** [/beaglelogic-server and /webapp]: MIT
  
 The project as a whole is licensed under GPL v3+
 
