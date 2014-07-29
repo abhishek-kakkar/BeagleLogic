@@ -1,0 +1,33 @@
+{
+  "name": "beaglelogic",
+  "version": "0.1.0",
+  "homepage": "https://github.com/abhishek-kakkar/BeagleLogic",
+  "authors": [
+    "Kumar Abhishek <abhishek@theembeddedkitchen.net>"
+  ],
+  "description": "BeagleLogic web frontend",
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "lls": "~0.1.3",
+    "bootstrap": "~3.2.0",
+    "wavedrom": "*"
+  },
+  "moduleType": [
+    "globals"
+  ],
+  "keywords": [
+    "logic",
+    "analyzer",
+    "pru",
+    "beagleboard",
+    "beaglebone"
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "name": "wavedrom",
+  "description": "Digital timing diagram in your browser",
+  "homepage": "https://github.com/drom/wavedrom",
+  "keywords": [
+    "waveform",
+    "verilog",
+    "RTL"
+  ],
+  "author": "alex.drom@gmail.com",
+  "license": "MIT",
+  "main": "WaveDrom.js",
+  "_release": "771721f5e4",
+  "_resolution": {
+    "type": "branch",
+    "branch": "master",
+    "commit": "771721f5e43c8bd85b03e3e6d3243382c2e346c7"
+  },
+  "_source": "https://github.com/drom/wavedrom.git",
+  "_target": "*",
+  "_originalSource": "wavedrom",
+  "_direct": true
+}
