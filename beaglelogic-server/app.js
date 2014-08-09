@@ -37,25 +37,37 @@ function connectionHandler(socket) {
 	});
 
 	socket.on('sigrok-test', function(data) {
-		var child_process = require('child_process');
-		var sigrok = child_process.spawn('sigrok-cli', [
+		child_process = require('child_process');
+		
+		args = [
 				'-d', 'beaglelogic',
-				'--samples', '3k',
-				'-c', 'samplerate=3M',
-				'--channels', 'P8_40,P8_45,P8_39',
-				'-t', 'P8_39=f',
-				'--output-format', 'ascii:width=3000']);
+				'--samples', data.samplecount,
+				'-c', 'samplerate=' + data.samplerate,
+				'--channels', data.channels,
+				'--output-format', 'ascii:width=' + data.samplecount];
+		
+		if (data.trigger) {
+			args.push('-t');
+			args.push(data.trigger);
+		}
+	
+		console.log('args = ' + args);
+
+		// Run sigrok-cli
+		var sigrok = child_process.spawn('sigrok-cli', args);
 
 		console.log('Launching sigrok-cli...');
 
-		var x = '';
+		// Receive data
+		var output = '';
 		sigrok.stdout.on('data', function(data) {
-			x = x + data;
+			output += data;
 		});
 
+		// Emit it
 		sigrok.on('close', function(ret) {
-			socket.emit('sigrok-data', x);
 			console.log('process exited with code ' + ret);
+			socket.emit('sigrok-data', output);
 		});
 	});
 
