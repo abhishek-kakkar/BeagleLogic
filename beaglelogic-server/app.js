@@ -28,16 +28,8 @@ io.on('connection', connectionHandler);
 function connectionHandler(socket) {
 	console.log('Socket.IO connected');
 
-	socket.on('message', function(data) {
-		console.log('How is it?' + data);
-	});
-
 	socket.on('disconnect', function(data) {
 		console.log('Someone disconnected: ' + JSON.stringify(data));
-	});
-
-	socket.on('sigrok-test-mock', function(data) {
-		socket.emit('sigrok-data-receive', data);
 	});
 
 	socket.on('error', function(data) {
