@@ -359,7 +359,6 @@
 <script src="bower_components/wavedrom/src/JsonML.js" type="text/javascript"></script>
 <script src="bower_components/wavedrom/src/WaveDrom.js" type="text/javascript"></script>
 <script type="text/javascript">
-	var socket = io();
 	
 	// Appends an alert into the alerts placeholder
 	function showAlert(type, text) {
@@ -369,6 +368,15 @@
 				'<span aria-hidden="true">&times;</span><span class="sr-only">Close</span>' +
 				'</button>' + text + '</div>');
 	}
+	
+	var socket;
+	
+	if (typeof io === 'undefined')
+	{
+		$(".alert").alert('close');
+		showAlert('info', 'The UI is in demo mode');
+	} else
+		socket = io();
 	
 	function renderWave(waveJSON) {	
 		$('#waveform0').html('');
@@ -475,12 +483,6 @@
 		$(".alert").alert('close');
 		showAlert('danger', 'Disconnected');
 	});
-
-	socket.on('sigrok-data-receive', function(data) {
-		$(".alert").alert('close');
-		$('#output').html('Data received: <br>' + data);	
-	});
-
 </script>
 </body>
 </html>
