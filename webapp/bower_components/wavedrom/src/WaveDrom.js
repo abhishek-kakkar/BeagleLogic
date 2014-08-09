@@ -1096,9 +1096,9 @@ WaveDrom.RenderWaveForm = function (index, source, output) {
 			xmax = Math.max(xmax, (glengths[i] + ret.width[i]));
 		}
 		this.RenderMarks(root, content, index);
-		this.RenderArcs(root, ret.lanes, index, source);
-		this.RenderGaps(root, ret.lanes, index);
-		this.RenderGroups(groups, ret.groups, index);
+		//this.RenderArcs(root, ret.lanes, index, source);
+		//this.RenderGaps(root, ret.lanes, index);
+		//this.RenderGroups(groups, ret.groups, index);
 		this.lane.xg = Math.ceil((xmax - this.lane.tgo) / this.lane.xs) * this.lane.xs;
 		width  = (this.lane.xg + (this.lane.xs * (this.lane.xmax + 1)));
 		height = (content.length * this.lane.yo +
