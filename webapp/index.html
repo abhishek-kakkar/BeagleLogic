@@ -370,46 +370,39 @@
 				'</button>' + text + '</div>');
 	}
 	
-	function renderWave(waveJSON) {		
+	function renderWave(waveJSON) {	
+		$('#waveform0').html('');
+		
+		t = new Date();
 		WaveDrom.RenderWaveForm(0, waveJSON, 'waveform');
 		t = new Date() - t;
+		
 		$(".alert").alert('close');
-		showAlert('info', 'Rendered in ' + t + ' ms');
+		showAlert('info', 'Rendered in ' + t + ' ms.');
 	}
-
-	var buf_size = 64 * 1024 * 1024;
-	var storage = new LargeLocalStorage({ name: 'BeagleLogic', size: buf_size });
 	
-	storage.initialized.then(function(capacity) {
-		console.log('Storage Granted');
-	});
-
-	function beginCapture() {
-		socket.emit('sigrok-test');
-		storage.setAttachment('beaglelogic-data', 'blob', null).then(function() {
-			console.log('Attachment reset successfully');
-		});
-		$('#debug').html('');
+	function beginCapture() {		
+		// Loop through all the elements and get checked pins
+		var selectedChannels = '';
+		$('.pin-selector-checkbox :checked').each(function() { selectedChannels += ',' + $(this).val() });
+		
+		// Remove trailing comma
+		selectedChannels = selectedChannels.substring(1);
+		
+		socket.emit('sigrok-test', { samplerate: '3M', channels: selectedChannels, samplecount: '3000'});
+		$('#debug').text('Requesting data...\n');
 	}
 
 	function processOutput(data) {
 		// Split into lines
 		lines = data.split('\n');
-		
-		storage.setAttachment('beaglelogic-data', 'blob', data);
-		
+
 		// Create a default JSON and fill it with the data received over the socket
 		var waveJSON = {
-			signal: [
-			  {name:'', wave:'' },
-			{},
-			  {name:'', wave: '' },
-			{},
-			  {name:'', wave:'' }
-			],
+			signal: [],
 			config: { skin: 'narrow' }
 		};
-
+		
 		// sigrok-cli returns in this format
 		// ..../""""""\......    """"\.....
 		//                    ||
@@ -422,45 +415,51 @@
 		// /  -> 1
 		// \  -> 0
 		
-		n = lines.length - 4;
+		n = lines.length - 3;
 		for (i = 0; i < n; i++) {
 			wave = lines[i + 2];
+			if (wave.startsWith('T'))
+				continue;
 			
 			sep = wave.split(':');
 			id = sep[0];
 			lanes = sep[1];
 
 			// The first literal of the wave determines whether this is a '0' or a '1'
-			if (lanes[0] == '.')
+			if (lanes[0] == '.' || lanes[0] == '\\')
 				lane = '0' + lanes.substring(1);
-			else if (lanes[1] == '\"')
+			else if (lanes[0] == '\"' || lanes[0] == '/')
 				lane = '1' + lanes.substring(1);
 			
 			// Perform the literal substitutions
-			wave = lane.replace(/\"/g, '.').replace(/\\/g, '0').replace(/\//g, '1');
+			sig = lane.replace(/\"/g, '.').replace(/\\/g, '0').replace(/\//g, '1');
 			
 			// Insert into the schema
-			waveJSON.signal[i * 2].name = id;
-			waveJSON.signal[i * 2].wave = wave;
+			waveJSON.signal.push({ name: id, wave : sig});
+			waveJSON.signal.push({ });
 			
-			$('#debug').append(id + ':' + wave + '\n');
+			// $('#debug').append(id + ':' + sig + '\n');
 		}
 
-		// Render it
-		renderWave(waveJSON);
+		// Render it [Deferred]
+		$('#debug').append('\nRendering... This may take a couple of seconds, and make the browser window non-responsive. Please be patient!\n');
+		
+		(function(w) { setTimeout(function() { 
+			renderWave(w) 
+		}, 100)})(waveJSON);
 	}
 
 	socket.on('sigrok-data', function(data) {
 		console.log('Received data', data.length);
-
-		$('#debug').text(data);
-		$('#debug').append('\nConverted to WaveDrom format:\n');
-
-		setTimeout(processOutput(data), 0);
+		$('#debug').append('Received ' + data.length + ' bytes of data.');
+		
+		(function (data) {
+			setTimeout(processOutput(data), 0);
+		})(data);
 	});
 
 	function saveCapture() {
-	
+
 	}
 
 	function dumpRawData() {
