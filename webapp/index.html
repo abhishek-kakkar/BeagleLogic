@@ -423,13 +423,21 @@
 	function beginCaptureSigrok() {		
 		// Loop through all the elements and get checked pins
 		var selectedChannels = '';
-		$('.pin-selector-checkbox :checked').each(function() { selectedChannels += ',' + $(this).val() });
+		var selection = $('.pin-selector-checkbox :checked');
 		
-		// Remove trailing comma
-		selectedChannels = selectedChannels.substring(1);
-		
-		socket.emit('sigrok-test', { samplerate: '3M', channels: selectedChannels, samplecount: '3000'});
-		$('#debug').text('Requesting data...\n');
+		if (selection.length > 0) {
+			$(".alert").alert('close');
+			selection.each(function() { selectedChannels += ',' + $(this).val() });
+			
+			// Remove trailing comma
+			selectedChannels = selectedChannels.substring(1);
+			
+			socket.emit('sigrok-test', { samplerate: '3M', channels: selectedChannels, samplecount: '3000'});
+			$('#debug').text('Requesting capture.\n');
+		} else {
+			$(".alert").alert('close');
+			showAlert('danger', 'Select some pins to capture first');
+		}
 	}
 
 	function processOutput(data) {
