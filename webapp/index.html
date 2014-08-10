@@ -406,7 +406,7 @@
 	function renderWave(waveJSON) {	
 		$('#waveform0').html('');
 		
-		t = new Date();
+		var t = new Date();
 		WaveDrom.RenderWaveForm(0, waveJSON, 'waveform');
 		t = new Date() - t;
 		
@@ -454,15 +454,15 @@
 		// /  -> 1
 		// \  -> 0
 		
-		n = lines.length - 3;
-		for (i = 0; i < n; i++) {
+		var n = lines.length - 3;
+		for (var i = 0; i < n; i++) {
 			wave = lines[i + 2];
 			if (wave.startsWith('T'))
 				continue;
 			
-			sep = wave.split(':');
-			id = sep[0];
-			lanes = sep[1];
+			var sep = wave.split(':');
+			var id = sep[0];
+			var lanes = sep[1];
 
 			// The first literal of the wave determines whether this is a '0' or a '1'
 			if (lanes[0] == '.' || lanes[0] == '\\')
@@ -471,7 +471,7 @@
 				lane = '1' + lanes.substring(1);
 			
 			// Perform the literal substitutions
-			sig = lane.replace(/\"/g, '.').replace(/\\/g, '0').replace(/\//g, '1');
+			var sig = lane.replace(/\"/g, '.').replace(/\\/g, '0').replace(/\//g, '1');
 			
 			// Insert into the schema
 			waveJSON.signal.push({ name: id, wave : sig});
