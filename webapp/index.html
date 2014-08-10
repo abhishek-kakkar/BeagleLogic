@@ -359,7 +359,7 @@
 <script src="bower_components/wavedrom/src/JsonML.js" type="text/javascript"></script>
 <script src="bower_components/wavedrom/src/WaveDrom.js" type="text/javascript"></script>
 <script type="text/javascript">
-	
+
 	// Appends an alert into the alerts placeholder
 	function showAlert(type, text) {
 		$('#alerts').append(
@@ -368,16 +368,15 @@
 				'<span aria-hidden="true">&times;</span><span class="sr-only">Close</span>' +
 				'</button>' + text + '</div>');
 	}
-	
+
 	var socket;
-	
+
 	// If socket.io has not been loaded from script,
 	// switch to demo mode
 	if (typeof io === 'undefined')
 	{
 		$(".alert").alert('close');
 		showAlert('info', 'The UI is in demo mode');
-		
 		beginCapture = beginCaptureDemo;
 	} else {
 		socket = io();
@@ -386,12 +385,12 @@
 		// Socket events
 		socket.on('sigrok-data', function(data) {
 			$('#debug').append('Received ' + data.length + ' bytes of data.');
-			
+
 			(function (data) {
 				setTimeout(processOutput(data), 20);
 			})(data);
 		});
-		
+
 		socket.on('connect', function(data) {
 			$(".alert").alert('close');
 			showAlert('success', 'Connected to your BeagleBone');
@@ -402,36 +401,36 @@
 			showAlert('danger', 'Disconnected');
 		});
 	}
-	
+
 	function renderWave(waveJSON) {	
 		$('#waveform0').html('');
-		
+
 		var t = new Date();
 		WaveDrom.RenderWaveForm(0, waveJSON, 'waveform');
 		t = new Date() - t;
-		
+
 		$(".alert").alert('close');
 		showAlert('info', 'Rendered in ' + t + ' ms.');
 	}
-	
+
 	function beginCaptureDemo() {
 		$('#debug').text('This is a static test waveform.\n');
 		processOutput('\n\nSCLK:./"\\./"\\./"\\.../"\\./"\\./"\\./"\\./"\\./"\\./"\\./""\\.../"\\./"\\./"\\./"\\./"\\./"\\./"\\./"\\..../"\\./"\\./"\\./"\\./"\\./"\\./"\\./"\\..../"\\./"\\./"\\./"\\./"\\./"\\./"\\./"\\..../"\\./"\\./"\\./"\\./"\\./"\\./"\\./"\\..../"\\./"\\./"\\./"\\./"\\./"\\./"\\./"\\.../"\\./"\\./"\\./"\\./"\\./"\\./"\\./"\\..\n' +
 		                  'DATA:""""\\........./"""\\.../"""\\.../"""""""\\.../""""""""""\\.../"""\\.../"""""""""""\\....../"""\\.../"""\\.../""""""""""""""""""""""\\.../"""""""\\................../"""\\.../"""""""\\.........../""""""""""\\.../"""""""\\......./"""\\....../"""\\.../"""""""\\......./"""""\\..\n');
 	}
-	
+
 	function beginCaptureSigrok() {		
 		// Loop through all the elements and get checked pins
 		var selectedChannels = '';
 		var selection = $('.pin-selector-checkbox :checked');
-		
+
 		if (selection.length > 0) {
 			$(".alert").alert('close');
 			selection.each(function() { selectedChannels += ',' + $(this).val() });
-			
+
 			// Remove trailing comma
 			selectedChannels = selectedChannels.substring(1);
-			
+
 			socket.emit('sigrok-test', { samplerate: '3M', channels: selectedChannels, samplecount: '3000'});
 			$('#debug').text('Requesting capture.\n');
 		} else {
@@ -449,7 +448,7 @@
 			signal: [],
 			config: { skin: 'narrow' }
 		};
-		
+
 		// Select text elements
 		var pinAnnotations = { };
 		var selection = $('.pin-selector-input');
@@ -460,7 +459,7 @@
 					pinAnnotations[key] = txt; 
 		});
 		console.log(pinAnnotations);
-		
+
 		// sigrok-cli returns in this format
 		// ..../""""""\......    """"\.....
 		//                    ||
@@ -472,13 +471,13 @@
 		// "" -> .. (same)
 		// /  -> 1
 		// \  -> 0
-		
+
 		var n = lines.length - 3;
 		for (var i = 0; i < n; i++) {
 			wave = lines[i + 2];
 			if (wave.startsWith('T'))
 				continue;
-			
+
 			var sep = wave.split(':');
 			var id = pinAnnotations[sep[0]] || sep[0];
 			var lanes = sep[1];
@@ -488,20 +487,18 @@
 				lane = '0' + lanes.substring(1);
 			else if (lanes[0] == '\"' || lanes[0] == '/')
 				lane = '1' + lanes.substring(1);
-			
+
 			// Perform the literal substitutions
 			var sig = lane.replace(/\"/g, '.').replace(/\\/g, '0').replace(/\//g, '1');
-			
+
 			// Insert into the schema
 			waveJSON.signal.push({ name: id, wave : sig});
 			waveJSON.signal.push({ });
-			
-			// $('#debug').append(id + ':' + sig + '\n');
 		}
 
 		// Render it [Deferred]
 		$('#debug').append('\nRendering... This may take a couple of seconds, and make the browser window non-responsive. Please be patient!\n');
-		
+
 		(function(w) { setTimeout(function() { 
 			renderWave(w) 
 		}, 100)})(waveJSON);
@@ -512,7 +509,7 @@
 	}
 
 	function dumpRawData() {
-	
+
 	}
 </script>
 </body>
