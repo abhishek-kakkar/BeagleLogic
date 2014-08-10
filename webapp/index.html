@@ -442,6 +442,17 @@
 			config: { skin: 'narrow' }
 		};
 		
+		// Select text elements
+		var pinAnnotations = { };
+		var selection = $('.pin-selector-input');
+		selection.each(function () {
+				var txt = $(this).val().trim();
+				var key = $(this).attr('placeholder');
+				if (txt !== '')
+					pinAnnotations[key] = txt; 
+		});
+		console.log(pinAnnotations);
+		
 		// sigrok-cli returns in this format
 		// ..../""""""\......    """"\.....
 		//                    ||
@@ -461,7 +472,7 @@
 				continue;
 			
 			var sep = wave.split(':');
-			var id = sep[0];
+			var id = pinAnnotations[sep[0]] || sep[0];
 			var lanes = sep[1];
 
 			// The first literal of the wave determines whether this is a '0' or a '1'
