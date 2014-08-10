@@ -371,12 +371,37 @@
 	
 	var socket;
 	
+	// If socket.io has not been loaded from script,
+	// switch to demo mode
 	if (typeof io === 'undefined')
 	{
 		$(".alert").alert('close');
 		showAlert('info', 'The UI is in demo mode');
-	} else
+		
+		beginCapture = beginCaptureDemo;
+	} else {
 		socket = io();
+		beginCapture = beginCaptureSigrok;
+		
+		// Socket events
+		socket.on('sigrok-data', function(data) {
+			$('#debug').append('Received ' + data.length + ' bytes of data.');
+			
+			(function (data) {
+				setTimeout(processOutput(data), 20);
+			})(data);
+		});
+		
+		socket.on('connect', function(data) {
+			$(".alert").alert('close');
+			showAlert('success', 'Connected to your BeagleBone');
+		});
+
+		socket.on('disconnect', function() {
+			$(".alert").alert('close');
+			showAlert('danger', 'Disconnected');
+		});
+	}
 	
 	function renderWave(waveJSON) {	
 		$('#waveform0').html('');
@@ -389,7 +414,13 @@
 		showAlert('info', 'Rendered in ' + t + ' ms.');
 	}
 	
-	function beginCapture() {		
+	function beginCaptureDemo() {
+		$('#debug').text('This is a static test waveform.\n');
+		processOutput('\n\nSCLK:./"\\./"\\./"\\.../"\\./"\\./"\\./"\\./"\\./"\\./"\\./""\\.../"\\./"\\./"\\./"\\./"\\./"\\./"\\./"\\..../"\\./"\\./"\\./"\\./"\\./"\\./"\\./"\\..../"\\./"\\./"\\./"\\./"\\./"\\./"\\./"\\..../"\\./"\\./"\\./"\\./"\\./"\\./"\\./"\\..../"\\./"\\./"\\./"\\./"\\./"\\./"\\./"\\.../"\\./"\\./"\\./"\\./"\\./"\\./"\\./"\\..\n' +
+		                  'DATA:""""\\........./"""\\.../"""\\.../"""""""\\.../""""""""""\\.../"""\\.../"""""""""""\\....../"""\\.../"""\\.../""""""""""""""""""""""\\.../"""""""\\................../"""\\.../"""""""\\.........../""""""""""\\.../"""""""\\......./"""\\....../"""\\.../"""""""\\......./"""""\\..\n');
+	}
+	
+	function beginCaptureSigrok() {		
 		// Loop through all the elements and get checked pins
 		var selectedChannels = '';
 		$('.pin-selector-checkbox :checked').each(function() { selectedChannels += ',' + $(this).val() });
@@ -457,15 +488,6 @@
 		}, 100)})(waveJSON);
 	}
 
-	socket.on('sigrok-data', function(data) {
-		console.log('Received data', data.length);
-		$('#debug').append('Received ' + data.length + ' bytes of data.');
-		
-		(function (data) {
-			setTimeout(processOutput(data), 0);
-		})(data);
-	});
-
 	function saveCapture() {
 
 	}
@@ -473,16 +495,6 @@
 	function dumpRawData() {
 	
 	}
-
-	socket.on('connect', function(data) {
-		$(".alert").alert('close');
-		showAlert('success', 'Connected to your BeagleBone');
-	});
-
-	socket.on('disconnect', function() {
-		$(".alert").alert('close');
-		showAlert('danger', 'Disconnected');
-	});
 </script>
 </body>
 </html>
