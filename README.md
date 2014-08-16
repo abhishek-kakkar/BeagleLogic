@@ -6,22 +6,25 @@ A Google Summer of Code 2014 Project with BeagleBoard.org.
 For detailed information and usage guide refer to
 [the project wiki](https://github.com/abhishek-kakkar/BeagleLogic/wiki)
 
-BeagleLogic is a Software Suite that implements a logic analyzer with the PRU 
-on the BeagleBone / the BeagleBone Black.
+Your BeagleBone Black. Now a Logic Analyzer.
 
-This repository does not include the PRU bindings for libsigrok. See
-[here](https://github.com/abhishek-kakkar/libsigrok) for the development work 
-of BeagleLogic related to libsigrok. The patches will be upstreamed once the
-integration is completed.
+BeagleLogic realizes a logic analyzer on the BeagleBone / the BeagleBone Black using
+the Programmable Real-Time units and the .
 
-The repo includes sources for:
- * PRU Firmware
- * BeagleLogic kernel module
- * Device tree overlay
+The libsigrok bindings for BeagleLogic have been accepted into the upstream
+libsigrok repository.
 
-In due course of time, this repo will include:
- * the Server utilizing libsigrok running on the BeagleBone \(Black\)
- * the BeagleLogic HTML5 frontend
+Directories:
+
+* beaglelogic-firmware: PRU Firmware
+* beaglelogic-kernel-driver: Device Tree overlay source and kernel module source and Makefile.
+**The default BeagleBone kernel v3.8.13-bone60 and above ship with BeagleLogic support.
+You can verify it using the command** ```modinfo beaglelogic```
+* beaglelogic-server: Node.JS backend and static file server for the web interface
+* webapp: A minimal web client for BeagleLogic. Uses sigrok-cli internally for data
+acquisition
+* testapp: A simple test application that shows how to use the userspace API of BeagleLogic
+and benchmarks memory copy speeds.
  
 Selected binaries and archives related to the project may be downloaded from
 [this link](http://goo.gl/770FTZ). Refer to the wiki for more information 
@@ -34,8 +37,3 @@ License
  * **Kernel Module**: GPLv2+
  * **sigrok bindings**: GPLv3+
  * **Web interface** [/beaglelogic-server and /webapp]: MIT
- 
-The project as a whole is licensed under GPL v3+
-
-A copy of the GNU GPL v3 can be found at the LICENSE file.
-
