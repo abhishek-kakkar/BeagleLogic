@@ -61,7 +61,7 @@
 							<div class="form-group">
 								<label for="samplerate" class="col-sm-5 control-label">Sample Limit</label>
 								<div class="col-sm-7">
-									<input class="form-control" type="text" value="10000">
+									<input class="form-control" type="text" id="samplecount" value="10000">
 								</div>
 							</div>
 						</div>
@@ -431,7 +431,7 @@
 			// Remove trailing comma
 			selectedChannels = selectedChannels.substring(1);
 
-			socket.emit('sigrok-test', { samplerate: '3M', channels: selectedChannels, samplecount: '3000'});
+			socket.emit('sigrok-test', { samplerate: $('#samplerate').val() , channels: selectedChannels, samplecount: $('#samplecount').val() });
 			$('#debug').text('Requesting capture.\n');
 		} else {
 			$(".alert").alert('close');
