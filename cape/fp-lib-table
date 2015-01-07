@@ -1,0 +1,4 @@
+(fp_lib_table
+  (lib (name "Custom libs")(type Legacy)(uri "./bbb.mod")(options "")(descr ""))
+  (lib (name logo)(type KiCad)(uri "./logo.pretty")(options "")(descr ""))
+)
