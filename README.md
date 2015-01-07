@@ -1,4 +1,4 @@
-BeagleLogic
+![logo](logo.png)
 ===========
 
 NEW: The BeagleLogic cape is here! To get more information please click [here]
@@ -45,3 +45,6 @@ License
  * **sigrok bindings**: GPLv3+
  * **Web interface** [/beaglelogic-server and /webapp]: MIT
  * **Cape** : CERN Open Hardware License
+ * **Logo** : [Creative Commons Attribution-ShareAlike 4.0 International (CC-BY-SA-4.0)]
+(http://creativecommons.org/licenses/by-sa/4.0/)
+
