@@ -45,7 +45,11 @@ function connectionHandler(socket) {
 				'-c', 'samplerate=' + data.samplerate,
 				'--channels', data.channels,
 				'--output-format', 'ascii:width=' + data.samplecount];
-		
+
+		if (data.extended) {
+			args[1] += ":logic_channels=14"
+		}
+
 		if (data.trigger) {
 			args.push('-t');
 			args.push(data.trigger);
