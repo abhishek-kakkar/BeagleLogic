@@ -81,7 +81,7 @@
 								</fieldset></div>
 								<div style="float:left; width:50%">
 									<div class="input-group pin-selectors">
-										<span class="input-group-addon pin-selector-checkbox"><input type="checkbox" value="P8_20"></span>
+										<span class="input-group-addon pin-selector-checkbox pin-extended"><input type="checkbox" value="P8_20"></span>
 										<input type="text" class="form-control input-sm pin-selector-input" placeholder="P8_20">
 									</div>
 								</div>
@@ -91,7 +91,7 @@
 								<div style="float:left; width:50%">
 									<div class="input-group pin-selectors">
 										<input type="text" class="form-control input-sm pin-selector-input text-right" placeholder="P8_21">
-										<span class="input-group-addon pin-selector-checkbox"><input type="checkbox" value="P8_43"></span>
+										<span class="input-group-addon pin-selector-checkbox pin-extended"><input type="checkbox" value="P8_21"></span>
 									</div>
 								</div>
 								<div style="float:left; width:50%"><fieldset disabled>
@@ -138,12 +138,12 @@
 								<div style="float:left; width:50%">
 									<div class="input-group pin-selectors">
 										<input type="text" class="form-control input-sm pin-selector-input text-right" placeholder="P8_27">
-										<span class="input-group-addon pin-selector-checkbox"><input type="checkbox" value="P8_27"></span>
+										<span class="input-group-addon pin-selector-checkbox pin-extended"><input type="checkbox" value="P8_27"></span>
 									</div>
 								</div>
 								<div style="float:left; width:50%">
 									<div class="input-group pin-selectors">
-										<span class="input-group-addon pin-selector-checkbox"><input type="checkbox" value="P8_28"></span>
+										<span class="input-group-addon pin-selector-checkbox pin-extended"><input type="checkbox" value="P8_28"></span>
 										<input type="text" class="form-control input-sm pin-selector-input" placeholder="P8_28">
 									</div>
 								</div>
@@ -153,12 +153,12 @@
 								<div style="float:left; width:50%">
 									<div class="input-group pin-selectors">
 										<input type="text" class="form-control input-sm pin-selector-input text-right" placeholder="P8_29">
-										<span class="input-group-addon pin-selector-checkbox"><input type="checkbox" value="P8_29"></span>
+										<span class="input-group-addon pin-selector-checkbox pin-extended"><input type="checkbox" value="P8_29"></span>
 									</div>
 								</div>
 								<div style="float:left; width:50%">
 									<div class="input-group pin-selectors">
-										<span class="input-group-addon pin-selector-checkbox"><input type="checkbox" value="P8_30"></span>
+										<span class="input-group-addon pin-selector-checkbox pin-extended"><input type="checkbox" value="P8_30"></span>
 										<input type="text" class="form-control input-sm pin-selector-input" placeholder="P8_30">
 									</div>
 								</div>
@@ -423,6 +423,7 @@
 		// Loop through all the elements and get checked pins
 		var selectedChannels = '';
 		var selection = $('.pin-selector-checkbox :checked');
+		var extended = $('.pin-extended :checked');
 
 		if (selection.length > 0) {
 			$(".alert").alert('close');
@@ -431,7 +432,7 @@
 			// Remove trailing comma
 			selectedChannels = selectedChannels.substring(1);
 
-			socket.emit('sigrok-test', { samplerate: $('#samplerate').val() , channels: selectedChannels, samplecount: $('#samplecount').val() });
+			socket.emit('sigrok-test', { samplerate: $('#samplerate').val() , channels: selectedChannels, samplecount: $('#samplecount').val(), extended: (extended.length > 0) ? 1 : 0 });
 			$('#debug').text('Requesting capture.\n');
 		} else {
 			$(".alert").alert('close');
