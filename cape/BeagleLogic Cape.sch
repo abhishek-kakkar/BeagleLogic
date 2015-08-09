@@ -1,4 +1,5 @@
 EESchema Schematic File Version 2
+LIBS:BeagleLogic Cape-rescue
 LIBS:power
 LIBS:device
 LIBS:transistors
@@ -10,7 +11,6 @@ LIBS:cmos4000
 LIBS:adc-dac
 LIBS:memory
 LIBS:xilinx
-LIBS:special
 LIBS:microcontrollers
 LIBS:dsp
 LIBS:analog_switches
@@ -651,27 +651,27 @@ Wire Wire Line
 	3950 5700 3750 5700
 Connection ~ 3750 5700
 Wire Wire Line
-	6400 2500 7150 2500
+	6300 2500 7150 2500
 Wire Wire Line
-	6400 2600 7150 2600
+	6300 2600 7150 2600
 Wire Wire Line
 	8850 2400 8850 5800
 Connection ~ 8850 4400
 Wire Wire Line
 	8650 2100 8750 2100
 Wire Wire Line
-	8750 2050 8750 4700
+	8750 1950 8750 4700
 Wire Wire Line
 	8750 4400 8650 4400
 Wire Wire Line
 	8750 5100 8750 5550
 Connection ~ 8750 4400
 Wire Wire Line
-	8350 4950 8450 4950
+	8250 4950 8450 4950
 Connection ~ 8850 5550
 Connection ~ 8750 2100
 Wire Wire Line
-	8750 1550 8750 1450
+	8750 1450 8750 1650
 Wire Wire Line
 	8750 1450 8950 1450
 Connection ~ 8950 1450
@@ -680,50 +680,50 @@ Wire Wire Line
 Wire Wire Line
 	3100 4600 3600 4600
 Wire Wire Line
-	3250 4500 3250 4750
+	3250 4400 3250 4750
 Wire Wire Line
-	3400 4600 3400 4500
+	3400 4400 3400 4600
 Wire Wire Line
 	2100 4550 2300 4550
 Wire Wire Line
 	2300 4650 1950 4650
 Wire Wire Line
-	1950 4550 1950 5100
+	1950 4450 1950 5200
 Wire Wire Line
-	2300 4750 1800 4750
+	1800 4750 2300 4750
 Wire Wire Line
-	1800 4750 1800 4550
+	1800 4450 1800 4750
 Wire Wire Line
-	2100 4550 2100 5100
+	2100 4450 2100 5200
 Connection ~ 1950 4650
 Wire Wire Line
 	2300 4900 1650 4900
 Wire Wire Line
-	1650 4550 1650 5100
+	1650 4450 1650 5200
 Wire Wire Line
-	2100 3700 2100 4050
+	2100 3700 2100 4150
 Wire Wire Line
-	1950 3700 1950 4050
+	1950 3700 1950 4150
 Connection ~ 2100 3700
 Wire Wire Line
-	1800 4050 1800 3700
+	1800 3700 1800 4150
 Connection ~ 1950 3700
 Wire Wire Line
-	1650 4050 1650 3700
+	1650 3700 1650 4150
 Connection ~ 1800 3700
 Wire Wire Line
 	1650 3700 3400 3700
 Connection ~ 1650 4900
 Wire Wire Line
-	2100 5600 2100 5850
+	2100 5500 2100 5850
 Wire Wire Line
-	1950 5700 1950 5600
+	1950 5500 1950 5700
 Wire Wire Line
 	1650 5700 2700 5700
 Connection ~ 2100 5700
 Connection ~ 1950 5700
 Wire Wire Line
-	1650 5600 1650 5700
+	1650 5500 1650 5700
 Wire Wire Line
 	2700 3700 2700 4350
 Wire Wire Line
@@ -849,9 +849,9 @@ Wire Wire Line
 Connection ~ 3400 4600
 Connection ~ 3250 4750
 Wire Wire Line
-	3400 3650 3400 4000
+	3400 3650 3400 4100
 Wire Wire Line
-	3250 3700 3250 4000
+	3250 3700 3250 4100
 Connection ~ 3400 3700
 Connection ~ 3250 3700
 Wire Wire Line
@@ -859,13 +859,13 @@ Wire Wire Line
 Wire Wire Line
 	3950 3100 3600 3100
 Wire Wire Line
-	5900 2500 5700 2500
+	5700 2500 6000 2500
 Wire Wire Line
-	5900 2600 5700 2600
+	5700 2600 6000 2600
 Wire Wire Line
 	3950 2100 3650 2100
 Wire Wire Line
-	7850 4950 7750 4950
+	7750 4950 7950 4950
 Wire Wire Line
 	7750 4950 7750 5300
 Wire Wire Line
@@ -873,18 +873,18 @@ Wire Wire Line
 Wire Wire Line
 	8750 5550 8850 5550
 Wire Wire Line
-	8950 2350 8950 3800
+	8950 2250 8950 3800
 Wire Wire Line
-	8950 1200 8950 1850
+	8950 1200 8950 1950
 Wire Wire Line
-	9350 2350 9050 2350
+	9050 2350 9400 2350
 Wire Wire Line
 	9050 2350 9050 2450
 Wire Wire Line
 	9050 2450 8950 2450
 Connection ~ 8950 2450
 Wire Wire Line
-	9750 2350 9850 2350
+	9700 2350 9850 2350
 Wire Wire Line
 	9850 2350 9850 2500
 $Comp
@@ -899,7 +899,7 @@ F 3 "" H 9850 2500 60  0000 C CNN
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	6950 2400 7150 2400
+	6900 2400 7150 2400
 Connection ~ 7000 2400
 Wire Wire Line
 	7150 4400 7100 4400
@@ -920,7 +920,7 @@ F 3 "" H 6750 2400 60  0000 C CNN
 	0    1    1    0   
 $EndComp
 Wire Wire Line
-	6550 2400 6500 2400
+	6500 2400 6600 2400
 Connection ~ 6500 2400
 Wire Wire Line
 	7150 2100 7100 2100
