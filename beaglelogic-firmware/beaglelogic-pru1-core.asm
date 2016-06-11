@@ -1,8 +1,12 @@
 ;* PRU1 Firmware for BeagleLogic
-;* Copyright (C) 2014 Kumar Abhishek
 ;*
-;* Licensed under the GNU GPL and provided "as-is" without any expressed 
-;* or implied warranties / liabilities.
+;* Copyright (C) 2014 Kumar Abhishek <abhishek@theembeddedkitchen.net>
+;*
+;* This file is a part of the BeagleLogic project
+;*
+;* This program is free software; you can redistribute it and/or modify
+;* it under the terms of the GNU General Public License version 2 as
+;* published by the Free Software Foundation.
 
 	.include "beaglelogic-pru-defs.inc"
 
@@ -52,7 +56,7 @@ main:
 
 	LDI    R31, 27 + 16                     ; Signal VRING1 to kernel driver
 	HALT
-	
+
 	; Sample starts here
 	; Maintain global bytes transferred counter (8 byte bursts)
 	LDI    R29, 0

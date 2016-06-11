@@ -1,10 +1,13 @@
 /*
  * PRU0 Firmware for BeagleLogic
- * 
- * Copyright (C) 2014 Kumar Abhishek
  *
- * Licensed under the GNU GPL and provided "as-is" without any expressed 
- * or implied warranties / liabilities.
+ * Copyright (C) 2014 Kumar Abhishek <abhishek@theembeddedkitchen.net>
+ *
+ * This file is a part of the BeagleLogic project
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
  */
 
 /* We are compiling for PRU0 */
