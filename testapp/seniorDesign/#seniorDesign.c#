@@ -113,8 +113,8 @@ void quadrature_counter(int buffer1, int buffer2)
 
 void *process_thread(void *ptr_package) {
 
-	size_t sz;
-	struct seniorDesignPackage *package = (struct seniorDesignPackage*)ptr_package;
+	size_t sz; 
+
 	while (1) {
 
 		/*when on BBB*/
@@ -122,10 +122,10 @@ void *process_thread(void *ptr_package) {
 		char buffer[4 * 1000 * 1000];
 
 		/*start reading*/
-		poll(&package->pollfd, 1, 500);
+		poll(&ptr_package->pollfd, 1, 500);
 		for (int i; i < 4 * 1000 * 1000; i++) {
-
-			sz = read(package->bfd, buffer, 4 * 1000 * 1000);
+			
+			sz = read(ptr_package->bfd, buffer, 4 * 1000 * 1000);
 
 			printf("%2x %2x\n", buffer[i], buffer[i+1]);
 
@@ -133,8 +133,8 @@ void *process_thread(void *ptr_package) {
 			quadrature_counter((int) buffer[i], (int) buffer[i + 1]);
 
 			/*store in circular buffer*/
-			lfq_queue(package->ptr_lfq, buffer[i]);
-			lfq_queue(package->ptr_lfq, buffer[i + 1]);
+			lfq_queue(ptr_package->ptr_lfq, buffer[i]);
+			lfq_queue(ptr_package->ptr_lfq, buffer[i + 1]);
 
 			if (sz == 0) {
 
@@ -142,7 +142,7 @@ void *process_thread(void *ptr_package) {
 				break;
 			}
 			else if (sz == -1) {
-				poll(&package->pollfd, 1, 500);
+				poll(&ptr_package->pollfd, 1, 500);
 				continue;
 			}
 		}
@@ -158,7 +158,7 @@ void *MQTT_thread(void *ptr_package, pthread_t process_t) {
 	while (1) {
 
 		// do stuff here
-		//printf("value dequeue %p\n", lfq_dequeue(ptr_q));
+		printf("value dequeue %p\n", lfq_dequeue(ptr_q));
 	}
 
 	printf("hello from MQTT thread");
