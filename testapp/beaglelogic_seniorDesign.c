@@ -21,8 +21,8 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "seniorDesign\lfq.h"
-#include "seniorDesign\seniorDesignLib.h"
+#include "seniorDesign/lfq.h"
+#include "seniorDesign/seniorDesignLib.h"
 #include "libbeaglelogic.h"
 
 int bfd, i;
@@ -30,15 +30,6 @@ uint8_t *buf,*bl_mem;
 
 pthread_t process_t;
 pthread_t MQTT_t;
-
-
-struct seniorDesignPackage {
-
-	struct lfq *ptr_lfq;
-	struct pollfd pollfd;
-	int bfd_cpy;
-
-};
 
 /* Returns time difference in microseconds */
 static uint64_t timediff(struct timespec *tv1, struct timespec *tv2)
@@ -81,8 +72,7 @@ int main(int argc, char **argv)
 
 	struct timespec t1, t2;
 	struct pollfd pollfd;
-	struct seniorDesignPackage package_t;
-	struct seniorDesignPackage *ptr_package_t;
+	seniorDesignPackage package_t;
 	struct lfq circleBuff;
 
 	printf("BeagleLogic test application\n");
@@ -149,10 +139,9 @@ int main(int argc, char **argv)
 	package_t.ptr_lfq = ptr_circ;
 	package_t.bfd_cpy = bfd; 
 	package_t.pollfd = pollfd;
-	ptr_package_t = &package_t; 
 
-	start_process_t(ptr_package_t, process_thread);
-	start_MQTT_t(ptr_package_t, MQTT_thread); 
+	start_process_t(&package_t, process_thread);
+	start_MQTT_t(&package_t, MQTT_thread); 
 
 	/*Join Threads*/
 	pthread_join(process_t, NULL);

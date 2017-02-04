@@ -114,7 +114,7 @@ void quadrature_counter(int buffer1, int buffer2)
 void *process_thread(void *ptr_package) {
 
 	size_t sz;
-	struct seniorDesignPackage *package = (struct seniorDesignPackage*)ptr_package;
+	seniorDesignPackage *package = (seniorDesignPackage*)ptr_package;
 	while (1) {
 
 		/*when on BBB*/

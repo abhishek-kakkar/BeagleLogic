@@ -8,6 +8,14 @@
 #ifndef SENIORDESIGNLIB_H_
 #define SENIORDESIGNLIB_H_
 
+typedef struct {
+
+	struct lfq *ptr_lfq;
+	struct pollfd pollfd;
+	int bfd_cpy;
+
+} seniorDesignPackage;
+
 //Bit processing 
 int Rand_Int(int a, int b);
 void quadrature_counter(int buffer1, int buffer2);
