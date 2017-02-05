@@ -118,6 +118,9 @@ void *process_thread(void *ptr_package) {
 
 	size_t sz;
 	seniorDesignPackage *package = (seniorDesignPackage*)ptr_package;
+
+	printf("hellos from process thread\n");
+
 	while (1) {
 
 		/*when on BBB*/
@@ -178,6 +181,8 @@ int start_process_t(void *ptr_package, pthread_t process_t){
 		return 1;
 	}
 	printf("Thread created\n");
+
+	pthread_join(process_t, NULL);
 	return 0;
 }
 
@@ -191,5 +196,7 @@ int start_MQTT_t(void *ptr_package, pthread_t MQTT_t) {
 		return 1;
 	}
 	printf("Thread created\n");
+
+	pthread_join(MQTT_t,NULL);
 	return 0;
 }

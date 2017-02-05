@@ -148,8 +148,8 @@ int main(int argc, char **argv)
 	}
 
 	/*Join Threads*/
-	pthread_join(process_t, NULL);
-	pthread_join(MQTT_t, NULL);
+	//pthread_join(process_t, NULL);
+	//pthread_join(MQTT_t, NULL);
 
 	clock_gettime(CLOCK_MONOTONIC, &t2);
 
