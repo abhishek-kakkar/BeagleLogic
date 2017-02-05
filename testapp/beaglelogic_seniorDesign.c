@@ -110,7 +110,7 @@ int main(int argc, char **argv)
 
 	buf = calloc(sz_to_read / 32, 32);
 	memset(buf, 0xFF, sz_to_read);
-	
+
 	printf("Buffer size = %d MB \n", sz_to_read / (1024 * 1024));
 
 	/* Configure capture settings */
@@ -129,19 +129,23 @@ int main(int argc, char **argv)
 	/*Call process and MQTT Thread*/
 
 	/*Initialize lfq*/
-	ptr_circ = &circleBuff;
-	buff_ptr = (void *)malloc(32 * 1000 * 1000 * sizeof(void));
-	void** buff_pptr = buff_prt; 
+	void*  buff_ptr = (void *)malloc(32 * 1000 * 1000 * sizeof(void));
+	void** buff_pptr = buff_ptr;
 
-	lfq_init(ptr_circ, 32 * 1000 * 1000, buff_pptr);
+	lfq_init(&circleBuff, 32 * 1000 * 1000, buff_pptr);
 
 	/*Start Threads*/
-	package_t.ptr_lfq = ptr_circ;
-	package_t.bfd_cpy = bfd; 
+	package_t.ptr_lfq = &circleBuff;
+	package_t.bfd_cpy = bfd;
 	package_t.pollfd = pollfd;
 
-	start_process_t(&package_t, process_thread);
-	start_MQTT_t(&package_t, MQTT_thread); 
+	if(start_process_t(&package_t, process_thread)){
+		return 1;
+	}
+
+	if(start_MQTT_t(&package_t, MQTT_thread)){
+		return 1;
+	}
 
 	/*Join Threads*/
 	pthread_join(process_t, NULL);

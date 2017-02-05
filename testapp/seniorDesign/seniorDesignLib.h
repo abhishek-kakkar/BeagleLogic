@@ -5,6 +5,7 @@
  *      Author: michael
  */
 
+#include <sys/poll.h>
 #ifndef SENIORDESIGNLIB_H_
 #define SENIORDESIGNLIB_H_
 
@@ -16,14 +17,14 @@ typedef struct {
 
 } seniorDesignPackage;
 
-//Bit processing 
+//Bit processing
 int Rand_Int(int a, int b);
 void quadrature_counter(int buffer1, int buffer2);
 
-//thread functions 
-void start_process_t();
-void start_MQTT_t();
-void *process_thread(void *ptr_q);
-void *MQTT_thread(void *ptr_q); 
+//thread functions
+int  start_process_t();
+int  start_MQTT_t();
+void *process_thread(void *ptr_package);
+void *MQTT_thread(void *ptr_package);
 
 #endif /* SENIORDESIGNLIB_H_ */

@@ -7,14 +7,17 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <pthread.h>
+#include <stdint.h>
+#include <unistd.h>
 #include "lfq.h"
 #include "seniorDesignLib.h"
-
+#include "../libbeaglelogic.h"
 
 //counters to keep track of how many times forward and backward has been seen
 int countforward = 0;
 int countbackward = 0;
 int counterror = 0;
+int i;
 
 int Rand_Int(int a, int b)
 {
@@ -34,7 +37,7 @@ void quadrature_counter(int buffer1, int buffer2)
 	int backwardcheck = 0b01000000; //compares temp to backward value "01"
 	int mask = 0b11000000; //masks two bits at a time in a byte
 
-	int i = 0; int j = 0; //loop counters
+	int j = 0; //loop counters
 
 	read[0] = buffer1;
 	read[1] = buffer2;
@@ -123,9 +126,9 @@ void *process_thread(void *ptr_package) {
 
 		/*start reading*/
 		poll(&package->pollfd, 1, 500);
-		for (int i; i < 4 * 1000 * 1000; i++) {
+		for (i=0; i < 4 * 1000 * 1000; i++) {
 
-			sz = read(package->bfd, buffer, 4 * 1000 * 1000);
+			sz = read(package->bfd_cpy, buffer, 4 * 1000 * 1000);
 
 			printf("%2x %2x\n", buffer[i], buffer[i+1]);
 
@@ -133,8 +136,8 @@ void *process_thread(void *ptr_package) {
 			quadrature_counter((int) buffer[i], (int) buffer[i + 1]);
 
 			/*store in circular buffer*/
-			lfq_queue(package->ptr_lfq, buffer[i]);
-			lfq_queue(package->ptr_lfq, buffer[i + 1]);
+			lfq_queue(package->ptr_lfq, (void*)&buffer[i]);
+			lfq_queue(package->ptr_lfq, (void*)&buffer[i + 1]);
 
 			if (sz == 0) {
 
@@ -153,7 +156,7 @@ void *process_thread(void *ptr_package) {
 
 }
 
-void *MQTT_thread(void *ptr_package, pthread_t process_t) {
+void *MQTT_thread(void *ptr_package){
 
 	while (1) {
 
@@ -166,19 +169,20 @@ void *MQTT_thread(void *ptr_package, pthread_t process_t) {
 }
 
 /*Helper function to start process thread*/
-void start_process_t(void *ptr_package, ){
+int start_process_t(void *ptr_package, pthread_t process_t){
 
-	prinf("Creating Process Thread\n");
+	printf("Creating Process Thread\n");
 	if (pthread_create(&process_t, NULL, process_thread, ptr_package)) {
 
 		printf("failed to create thread\n");
 		return 1;
 	}
 	printf("Thread created\n");
+	return 0;
 }
 
 /*Helper function to start MQTT thread*/
-void start_MQTT_t(void *ptr_package, pthread_t process_t) {
+int start_MQTT_t(void *ptr_package, pthread_t MQTT_t) {
 
 	printf("Creating MQTT Thread\n");
 	if (pthread_create(&MQTT_t, NULL, MQTT_thread, ptr_package)) {
@@ -187,4 +191,5 @@ void start_MQTT_t(void *ptr_package, pthread_t process_t) {
 		return 1;
 	}
 	printf("Thread created\n");
+	return 0;
 }
