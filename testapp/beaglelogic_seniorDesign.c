@@ -143,9 +143,9 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	if(start_MQTT_t(&package_t, MQTT_thread)){
-		return 1;
-	}
+//	if(start_MQTT_t(&package_t, MQTT_thread)){
+//		return 1;
+//	}
 
 	/*Join Threads*/
 	//pthread_join(process_t, NULL);
