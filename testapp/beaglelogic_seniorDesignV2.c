@@ -81,7 +81,7 @@ int main(int argc, char **argv)
 	struct pollfd pollfd;
 	struct lfq circleBuff;
 	seniorDesignPackage package_t;
-	
+
 
 	printf("BeagleLogic test application\n");
 
@@ -119,13 +119,13 @@ int main(int argc, char **argv)
 		beaglelogic_set_buffersize(bfd, sz_to_read = 32 * 1024 * 1024);
 		beaglelogic_get_buffersize(bfd, &sz_to_read);
 	}
-	
+
 	buf = calloc(sz_to_read / 32, 32);
 	memset(buf, 0xFF, sz_to_read);
 
 	printf("Buffer size = %d MB \n", sz_to_read / (1024 * 1024));
 
-	
+
 	/* Configure capture settings */
 	clock_gettime(CLOCK_MONOTONIC, &t1);
 	beaglelogic_set_samplerate(bfd, 8 * 1000 * 1000);
@@ -149,9 +149,9 @@ int main(int argc, char **argv)
 	package_t.bfd_cpy = bfd;
 	package_t.pollfd = pollfd;
 
-	if (start_MQTT_t(&package_t, MQTT_thread)) {
-		return 1;
-	}
+	//if (start_MQTT_t(&package_t, MQTT_thread)) {
+	//	return 1;
+	//}
 
 	clock_gettime(CLOCK_MONOTONIC, &t1);
 	cnt = 0;
@@ -165,19 +165,19 @@ int main(int argc, char **argv)
 		int i;
 		while (cnt1 < sz_to_read && pollfd.revents) {
 			/* Do stuff until timeout */
-			sz = read(bfd, buffer, 2);
-			
+			sz = read(bfd, buffer, 4*1000*1000);
+
 			/*Check For bit changes*/
-			for (i = 0; i < 4 * 1000 * 1000; i++) {
+			for (i = 0; i < 4 * 1000 * 1000; i+=2) {
 
 				/*Debug*/
 				printf("%2x %2x\n", buffer[i], buffer[i + 1]);
 
-				quadrature_counter(buffer[i], buffer[i + 1])
+				quadrature_counter(buffer[i], buffer[i + 1]);
 
 				/*store in circular buffer*/
-				lfq_queue(package->ptr_lfq, (void*)&buffer[i]);
-				lfq_queue(package->ptr_lfq, (void*)&buffer[i + 1]);
+				lfq_queue(&circleBuff, (void*)&buffer[i]);
+				lfq_queue(&circleBuff, (void*)&buffer[i + 1]);
 			}
 
 			if (sz == 0)
