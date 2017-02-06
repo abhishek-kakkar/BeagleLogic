@@ -31,6 +31,9 @@ uint8_t *buf,*bl_mem;
 pthread_t process_t;
 pthread_t MQTT_t;
 
+/* For testing nonblocking IO */
+#define NONBLOCK
+
 /* Returns time difference in microseconds */
 static uint64_t timediff(struct timespec *tv1, struct timespec *tv2)
 {
@@ -79,7 +82,11 @@ int main(int argc, char **argv)
 
 	/* Open BeagleLogic */
 	clock_gettime(CLOCK_MONOTONIC, &t1);
+#if defined(NONBLOCK)
 	bfd = beaglelogic_open_nonblock();
+#else
+	bfd = beaglelogic_open();
+#endif
 	clock_gettime(CLOCK_MONOTONIC, &t2);
 
 	if (bfd == -1) {
@@ -133,7 +140,7 @@ int main(int argc, char **argv)
 	void** buff_pptr = buff_ptr;
 
 	lfq_init(&circleBuff, 32 * 1000 * 1000, buff_pptr);
-
+#if defined(NONBLOCK)
 	/*Start Threads*/
 	package_t.ptr_lfq = &circleBuff;
 	package_t.bfd_cpy = bfd;
@@ -150,7 +157,17 @@ int main(int argc, char **argv)
 	/*Join Threads*/
 	//pthread_join(process_t, NULL);
 	//pthread_join(MQTT_t, NULL);
+#else
+	(void)pollfd;
+	do {
+		sz = read(bfd, buf2, 64 * 1024 * 16);
+		if (sz == -1)
+			break;
 
+		buf2 += sz;
+		cnt1 += sz;
+	} while (sz > 0 && cnt1 < sz_to_read);
+#endif
 	clock_gettime(CLOCK_MONOTONIC, &t2);
 
 	printf("Read %d bytes in %jd us, speed=%jd MB/s\n",

@@ -129,7 +129,7 @@ void *process_thread(void *ptr_package) {
 
 		/*start reading*/
 		poll(&package->pollfd, 1, 500);
-		for (i=0; i < 4 * 1000 * 1000; i++) {
+		for (i=0; i < 4 * 1000 * 1000; i+=2) {
 
 			sz = read(package->bfd_cpy, buffer, 4 * 1000 * 1000);
 

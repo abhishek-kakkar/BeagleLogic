@@ -63,7 +63,6 @@ int main(int argc, char **argv)
 {
 	int cnt1;
 	size_t sz, sz_to_read, cnt;
-	char channels[2];
 	struct timespec t1, t2;
 	struct pollfd pollfd;
 
