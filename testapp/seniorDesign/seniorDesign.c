@@ -161,10 +161,11 @@ void *process_thread(void *ptr_package) {
 
 void *MQTT_thread(void *ptr_package){
 
-	while (1) {
+	seniorDesignPackage *package = (seniorDesignPackage*) ptr_package;
+	for(i=0; i< 4*1000*1000; i++){
 
 		// do stuff here
-		//printf("value dequeue %p\n", lfq_dequeue(ptr_q));
+		printf("value dequeue %p\n", lfq_dequeue(package->ptr_lfq));
 	}
 
 	printf("hello from MQTT thread");
@@ -197,6 +198,6 @@ int start_MQTT_t(void *ptr_package, pthread_t MQTT_t) {
 	}
 	printf("Thread created\n");
 
-	pthread_join(MQTT_t,NULL);
+//	pthread_join(MQTT_t,NULL);
 	return 0;
 }
