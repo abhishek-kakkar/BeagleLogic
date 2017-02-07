@@ -45,7 +45,7 @@ void quadrature_counter(int buffer1, int buffer2)
 	//present run = last run, do nothing
 	if (read[0] == past[0] && read[1] == past[1])
 	{
-		printf("Past = Present. Did nothing. \n");
+		//printf("Past = Present. Did nothing. \n");
 	}
 
 	else
@@ -75,18 +75,21 @@ void quadrature_counter(int buffer1, int buffer2)
 					if ((temp == mask) || (temp == 0))
 					{
 						counterror++;
+						//printf("count error\n");
 					}
 
 					//check for forward flow - bit pair "10"
 					else if ((temp & forwardcheck) == forwardcheck)
 					{
 						countforward++;
+						//printf("count fwd\n");
 					}
 
 					//check for backward flow - bit pair "01"
 					else if ((temp & backwardcheck) == backwardcheck) //else if later
 					{
 						countbackward++;
+						//printf("count back\n");
 					}
 
 					//catch all - error in value read
@@ -164,8 +167,11 @@ void *MQTT_thread(void *ptr_package){
 	seniorDesignPackage *package = (seniorDesignPackage*) ptr_package;
 	for(i=0; i< 4*1000*1000; i++){
 
+		char *ptr_lfq_element = (char*) lfq_dequeue(package->ptr_lfq);
+		char lfq_element = *ptr_lfq_element;
+
 		// do stuff here
-		printf("value dequeue %p\n", lfq_dequeue(package->ptr_lfq));
+		printf("value dequeue %2x\n",lfq_element );
 	}
 
 	printf("hello from MQTT thread");
