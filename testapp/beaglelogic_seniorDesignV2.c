@@ -156,6 +156,7 @@ int main(int argc, char **argv)
 	clock_gettime(CLOCK_MONOTONIC, &t1);
 	cnt = 0;
 	for (i = 0; i < 10; i++) {
+
 		/* Configure counters */
 		cnt1 = 0;
 		buf2 = buf;
@@ -164,20 +165,22 @@ int main(int argc, char **argv)
 		poll(&pollfd, 1, 500);
 		int i;
 		while (cnt1 < sz_to_read && pollfd.revents) {
-			/* Do stuff until timeout */
+
+			/* read in 4MBS */
 			sz = read(bfd, buff_ptr, 4*1000*1000);
 
 			/*Check For bit changes*/
 			for (i = 0; i < 4 * 1000 * 1000; i+=2) {
 
 				/*Debug*/
-				printf("%2x %2x\n", buffer[i], buffer[i + 1]);
+				//printf("%2x %2x\n", buffer[i], buffer[i + 1]);
 
 				quadrature_counter(buffer[i], buffer[i + 1]);
 
 				/*store in circular buffer*/
-				//lfq_queue(&circleBuff, (void*)&buffer[i]);
-				//lfq_queue(&circleBuff, (void*)&buffer[i + 1]);
+				/* reduce this to one function call */
+				lfq_queue(&circleBuff, (void*)&buffer[i]);
+				lfq_queue(&circleBuff, (void*)&buffer[i + 1]);
 			}
 
 			lfq_advance();
