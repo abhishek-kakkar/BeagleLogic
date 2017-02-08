@@ -166,7 +166,7 @@ int main(int argc, char **argv)
 		while (cnt1 < sz_to_read && pollfd.revents) {
 
 			/*Time for loop and read()*/
-			clock_gettime(CLOCK_MONOTONIC, &t3)
+			clock_gettime(CLOCK_MONOTONIC, &t3);
 			/*Do stuff until timeout */
 			sz = read(bfd, buffer, 4*1000*1000);
 
@@ -184,8 +184,9 @@ int main(int argc, char **argv)
 			}
 			//lfq_in
 
-			clockgettime(CLOCK_MONOTONIC, &t4);
-			printf("time for read and process = %jd\n", timediff(&t3,&t4);
+			clock_gettime(CLOCK_MONOTONIC, &t4);
+			printf("time for read and process = %jd\n", timediff(&t3,&t4));
+
 			if (sz == 0)
 				break;
 			else if (sz == -1) {

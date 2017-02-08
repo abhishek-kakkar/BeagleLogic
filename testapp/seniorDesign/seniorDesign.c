@@ -43,8 +43,8 @@ void quadrature_counter(int buffer1, int buffer2)
 	read[1] = buffer2;
 
 	//present run = last run, do nothing
-	printf("Past[0]= %d Past[1]= %d \n", past[0], past[1]);
-	printf("Current[0]= %d Current[1]= %d \n", read[0], read[1]);
+	//printf("Past[0]= %d Past[1]= %d \n", past[0], past[1]);
+	//printf("Current[0]= %d Current[1]= %d \n", read[0], read[1]);
 
 	if (read[0] == past[0] && read[1] == past[1])
 	{
