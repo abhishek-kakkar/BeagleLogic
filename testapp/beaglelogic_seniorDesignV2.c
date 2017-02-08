@@ -176,7 +176,7 @@ int main(int argc, char **argv)
 				/*Debug*/
 				//printf("%2x %2x\n", buffer[i], buffer[i + 1]);
 
-				quadrature_counter(buffer[i], buffer[i + 1]);
+				//quadrature_counter(buffer[i], buffer[i + 1]);
 
 				/*store in circular buffer*/
 				lfq_queue(&circleBuff, (void*)&buffer[i]);
