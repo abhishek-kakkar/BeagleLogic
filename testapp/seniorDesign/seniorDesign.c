@@ -33,9 +33,9 @@ void quadrature_counter(int buffer1, int buffer2)
 	int read[2]; //place both buffer values into int array
 	int temp = 0x00; //variable to hold masked value
 
-	int forwardcheck = 0b10000000; //compares temp to forward value "10"
-	int backwardcheck = 0b01000000; //compares temp to backward value "01"
-	int mask = 0b11000000; //masks two bits at a time in a byte
+	int forwardcheck = 0b1000000000; //compares temp to forward value "10"
+	int backwardcheck = 0b0100000000; //compares temp to backward value "01"
+	int mask = 0b1100000000; //masks two bits at a time
 
 	int j = 0; //loop counters
 
@@ -50,66 +50,71 @@ void quadrature_counter(int buffer1, int buffer2)
 
 	else
 	{
-		for (i = 0; i<2; i++)
+		// if all bit pairs in the first byte are going forward, avoid shifting just add 4 to forward count
+		if (read[0] == FORWARDCONSTANT)
 		{
-			// if all bits are going forward, avoid shifting just add 8 to forward count
-			if (read[i] == FORWARDCONSTANT)
-			{
-				countforward = countforward + 4;
-			}
+			countforward = countforward + 4;
+		}
 
-			// if all bits are going backward, avoid shifting just add 8 to backward count
-			else if (read[i] == BACKWARDCONSTANT)
-			{
-				countbackward = countbackward + 4;
-			}
+		// if all bit pairs in the first byte are going backward, avoid shifting just add 4 to backward count
+		else if (read[0] == BACKWARDCONSTANT)
+		{
+			countbackward = countbackward + 4;
+		}
 
-			else
+		/*If different check bit pairs individually.
+		Loop 5 times to check the 4 bit pairs in the first byte and the first bit pair in the second byte. 
+		The next bit pair (bits 10-11) are the prover input so it will have no impact on counters.
+		The next 2 bit pairs (12-15) will always be grounded as we cannot access them and thus will have no impact on counters.*/
+		
+		else
+		{
+			i = 0;
+			for (j = 0; j< 5; j++)
 			{
-				for (j = 0; j< 4; j++)
+				if (j==4) { i = 1; } //if the 4 bit pairs in the first byte have already been checked, increase i to check second byte. 
+				
+				temp = 0x00;
+				temp = read[i] & mask; //access bits 
+
+				//check for errors - bit pairs "11" or "00"
+				if ((temp == mask) || (temp == 0))
 				{
-					temp = 0x00;
-					temp = read[i] & mask; //access first two bits in a byte
-
-					//check for errors - bit pairs "11" or "00"
-					if ((temp == mask) || (temp == 0))
-					{
-						counterror++;
-						//printf("count error\n");
-					}
-
-					//check for forward flow - bit pair "10"
-					else if ((temp & forwardcheck) == forwardcheck)
-					{
-						countforward++;
-						//printf("count fwd\n");
-					}
-
-					//check for backward flow - bit pair "01"
-					else if ((temp & backwardcheck) == backwardcheck) //else if later
-					{
-						countbackward++;
-						//printf("count back\n");
-					}
-
-					//catch all - error in value read
-					else
-					{
-						printf("ERROR SHOULD NOT HAVE ENTERED HERE");
-					}
-
-					//shift values right by two to check next two bits
-					forwardcheck = forwardcheck >> 2;
-					backwardcheck = backwardcheck >> 2;
-					mask = mask >> 2;
+					counterror++;
+					//printf("count error\n");
 				}
 
-				//restore the checks and mask before checking the second byte
+				//check for forward flow - bit pair "10"
+				else if ((temp & forwardcheck) == forwardcheck)
+				{
+					countforward++;
+					//printf("count fwd\n");
+				}
+
+				//check for backward flow - bit pair "01"
+				else if ((temp & backwardcheck) == backwardcheck) //else if later
+				{
+					countbackward++;
+					//printf("count back\n");
+				}
+
+				//catch all - error in value read
+				else
+				{
+					printf("ERROR SHOULD NOT HAVE ENTERED HERE");
+				}
+
+				//shift values right by two to check next two bits
+				forwardcheck = forwardcheck >> 2;
+				backwardcheck = backwardcheck >> 2;
+				mask = mask >> 2;
+			}
+
+				/*restore the checks and mask before checking the second byte
 				forwardcheck = 0b10000000;
 				backwardcheck = 0b01000000;
-				mask = 0b11000000;
+				mask = 0b11000000;*/
 			}
-		}
 
 		//set past = present for next run
 		past[0] = read[0];
