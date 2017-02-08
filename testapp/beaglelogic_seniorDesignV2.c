@@ -164,14 +164,17 @@ int main(int argc, char **argv)
 		poll(&pollfd, 1, 500);
 		int i;
 		while (cnt1 < sz_to_read && pollfd.revents) {
-			/* Do stuff until timeout */
+
+			/*Time for loop and read()*/
+			clock_gettime(CLOCK_MONOTONIC, &t3)
+			/*Do stuff until timeout */
 			sz = read(bfd, buffer, 4*1000*1000);
 
 			/*Check For bit changes*/
 			for (i = 0; i < 4 * 1000 * 1000; i+=2) {
 
 				/*Debug*/
-				printf("%2x %2x\n", buffer[i], buffer[i + 1]);
+				//printf("%2x %2x\n", buffer[i], buffer[i + 1]);
 
 				quadrature_counter(buffer[i], buffer[i + 1]);
 
@@ -179,7 +182,10 @@ int main(int argc, char **argv)
 				lfq_queue(&circleBuff, (void*)&buffer[i]);
 				lfq_queue(&circleBuff, (void*)&buffer[i + 1]);
 			}
+			//lfq_in
 
+			clockgettime(CLOCK_MONOTONIC, &t4);
+			printf("time for read and process = %jd\n", timediff(&t3,&t4);
 			if (sz == 0)
 				break;
 			else if (sz == -1) {
