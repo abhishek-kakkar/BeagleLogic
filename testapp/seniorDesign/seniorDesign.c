@@ -33,9 +33,9 @@ void quadrature_counter(int buffer1, int buffer2)
 	int read[2]; //place both buffer values into int array
 	int temp = 0x00; //variable to hold masked value
 
-	int forwardcheck = 0b1000000000; //compares temp to forward value "10"
-	int backwardcheck = 0b0100000000; //compares temp to backward value "01"
-	int mask = 0b1100000000; //masks two bits at a time
+	int forwardcheck = 0b10000000; //compares temp to forward value "10"
+	int backwardcheck = 0b01000000; //compares temp to backward value "01"
+	int mask = 0b11000000; //masks two bits at a time
 
 	int j = 0; //loop counters
 
@@ -72,9 +72,17 @@ void quadrature_counter(int buffer1, int buffer2)
 			i = 0;
 			for (j = 0; j< 5; j++)
 			{
-				if (j==4) { i = 1; } //if the 4 bit pairs in the first byte have already been checked, increase i to check second byte. 
+				if (j==4) 
+				{ 
+					i = 1; //if the 4 bit pairs in the first byte have already been checked, increase i to check second byte. 
+					
+					//Also restore the checks and mask before checking the second byte
+					forwardcheck = 0b10000000;
+					backwardcheck = 0b01000000;
+					mask = 0b11000000;
+				}
 				
-				temp = 0x00;
+				temp = 0x00; //clear temp every run
 				temp = read[i] & mask; //access bits 
 
 				//check for errors - bit pairs "11" or "00"
@@ -109,12 +117,8 @@ void quadrature_counter(int buffer1, int buffer2)
 				backwardcheck = backwardcheck >> 2;
 				mask = mask >> 2;
 			}
-
-				/*restore the checks and mask before checking the second byte
-				forwardcheck = 0b10000000;
-				backwardcheck = 0b01000000;
-				mask = 0b11000000;*/
-			}
+				
+		}
 
 		//set past = present for next run
 		past[0] = read[0];
