@@ -42,6 +42,7 @@ void quadrature_counter(int buffer1, int buffer2)
 	read[0] = buffer1;
 	read[1] = buffer2;
 
+	/*put this if outside of he function so we don't have to jump*/
 	//present run = last run, do nothing
 	if (read[0] == past[0] && read[1] == past[1])
 	{

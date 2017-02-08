@@ -165,7 +165,7 @@ int main(int argc, char **argv)
 		int i;
 		while (cnt1 < sz_to_read && pollfd.revents) {
 			/* Do stuff until timeout */
-			sz = read(bfd, buffer, 4*1000*1000);
+			sz = read(bfd, buff_ptr, 4*1000*1000);
 
 			/*Check For bit changes*/
 			for (i = 0; i < 4 * 1000 * 1000; i+=2) {
@@ -176,9 +176,11 @@ int main(int argc, char **argv)
 				quadrature_counter(buffer[i], buffer[i + 1]);
 
 				/*store in circular buffer*/
-				lfq_queue(&circleBuff, (void*)&buffer[i]);
-				lfq_queue(&circleBuff, (void*)&buffer[i + 1]);
+				//lfq_queue(&circleBuff, (void*)&buffer[i]);
+				//lfq_queue(&circleBuff, (void*)&buffer[i + 1]);
 			}
+
+			lfq_advance();
 
 			if (sz == 0)
 				break;
