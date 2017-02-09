@@ -28,7 +28,7 @@
 #include "libbeaglelogic.h"
 
 int bfd, i;
-uint8_t *buf, *buf2, *buf3, *bl_mem;
+uint8_t *buf,*bl_mem;
 
 pthread_t process_t;
 pthread_t MQTT_t;
@@ -77,6 +77,7 @@ int main(int argc, char **argv)
 
 	/*buffer for read*/
 	char buffer[4 * 1000 * 1000];
+	char past[2];
 	struct timespec t1, t2, t3, t4;
 	struct pollfd pollfd;
 	struct lfq circleBuff;
@@ -159,13 +160,13 @@ int main(int argc, char **argv)
 
 		/* Configure counters */
 		cnt1 = 0;
-		buf2 = buf;
-		buf3 = bl_mem;
+
 #if defined(NONBLOCK)
 		poll(&pollfd, 1, 500);
 		int i;
 		while (cnt1 < sz_to_read && pollfd.revents) {
 
+			/*Start a timer*/
 			clock_gettime(CLOCK_MONOTONIC, &t3);
 			/*Do stuff until timeout */
 			sz = read(bfd, buffer, 4*1000*1000);
@@ -176,15 +177,19 @@ int main(int argc, char **argv)
 				/*Debug*/
 				//printf("%2x %2x\n", buffer[i], buffer[i + 1]);
 
-				quadrature_counter(buffer[i], buffer[i + 1]);
+				if (buffer[i] != past[0] && buffer[i + 1] != past[1]) {
+					quadrature_counter(buffer[i], buffer[i + 1]);
+				}
 
-				/*store in circular buffer*/
-				/* reduce this to one function call */
+				/*Upadte past value*/
+				past[0] = buffer[i];
+				past[1] = buffer[i + 1];
+
+				/*Store in circular buffer*/
+				/*Reduce this to one function call */
 				lfq_queue(&circleBuff, (void*)&buffer[i]);
 				lfq_queue(&circleBuff, (void*)&buffer[i + 1]);
 			}
-			//lfq_in
-
 			clock_gettime(CLOCK_MONOTONIC, &t4);
 			printf("time for read and process = %jd\n", timediff(&t3,&t4));
 
@@ -197,8 +202,6 @@ int main(int argc, char **argv)
 				continue;
 			}
 
-			buf2 += sz;
-			buf3 += sz;
 			cnt1 += sz;
 		}
 #else
@@ -207,8 +210,6 @@ int main(int argc, char **argv)
 			sz = read(bfd, buf2, 64 * 1024 * 16);
 			if (sz == -1)
 				break;
-
-			buf2 += sz;
 			cnt1 += sz;
 		} while (sz > 0 && cnt1 < sz_to_read);
 #endif
