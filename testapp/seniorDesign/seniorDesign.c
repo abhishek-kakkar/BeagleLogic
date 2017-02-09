@@ -60,47 +60,46 @@ void quadrature_counter(int buffer1, int buffer2)
 	}
 
 	/*If different check bit pairs individually.
-	Loop 5 times to check the 4 bit pairs in the first byte and the first bit pair in the second byte. 
+	Loop 5 times to check the 4 bit pairs in the first byte and the first bit pair in the second byte.
 	The next bit pair (bits 10-11) are the prover input so it will have no impact on counters.
 	The next 2 bit pairs (12-15) will always be grounded as we cannot access them and thus will have no impact on counters.*/
-		
+
 	else
 	{
 		i = 0;
 		for (j = 0; j< 5; j++)
 		{
-			if (j==4) 
-			{ 
-				i = 1; //if the 4 bit pairs in the first byte have already been checked, increase i to check second byte. 
-					
+			if (j==4)
+			{
+				i = 1; //if the 4 bit pairs in the first byte have already been checked, increase i to check second byte.
 				//Also restore the checks and mask before checking the second byte
 				forwardcheck = 0b10000000;
 				backwardcheck = 0b01000000;
 				mask = 0b11000000;
 			}
-				
+
 			temp = 0x00; //clear temp every run
-			temp = read[i] & mask; //access bits 
+			temp = read[i] & mask; //access bits
 
 			//check for errors - bit pairs "11" or "00"
 			if ((temp == mask) || (temp == 0))
 			{
 				counterror++;
-				printf("count error\n");
+				//printf("count error\n");
 			}
 
 			//check for forward flow - bit pair "10"
 			else if ((temp & forwardcheck) == forwardcheck)
 			{
 				countforward++;
-				printf("count fwd\n");
+				//printf("count fwd\n");
 			}
 
 			//check for backward flow - bit pair "01"
 			else if ((temp & backwardcheck) == backwardcheck) //else if later
 			{
 				countbackward++;
-				printf("count back\n");
+				//printf("count back\n");
 			}
 
 			//catch all - error in value read

@@ -143,7 +143,7 @@ int main(int argc, char **argv)
 	void*  buff_ptr = (void *)malloc(32 * 1000 * 1000 * sizeof(void));
 	void** buff_pptr = buff_ptr;
 
-	lfq_init(&circleBuff, 32 * 1000 * 1000, buff_pptr);
+	lfq_init(&circleBuff, 32* 1000 * 1000, buff_pptr);
 
 	/*Spawn MQTT thread*/
 	package_t.ptr_lfq = &circleBuff;
@@ -177,7 +177,7 @@ int main(int argc, char **argv)
 				/*Debug*/
 				//printf("%2x %2x\n", buffer[i], buffer[i + 1]);
 
-				if (buffer[i] != past[0] && buffer[i + 1] != past[1]) {
+				if (buffer[i] != past[0] || buffer[i + 1] != past[1]) {
 					quadrature_counter(buffer[i], buffer[i + 1]);
 				}
 
@@ -187,13 +187,14 @@ int main(int argc, char **argv)
 
 				/*Store in circular buffer*/
 				/*Reduce this to one function call */
-				lfq_queue(&circleBuff, (void*)&buffer[i]);
-				lfq_queue(&circleBuff, (void*)&buffer[i + 1]);
+				//printf("breaks here %d \n", i);
+				//lfq_queue(&circleBuff, (void*)&buffer[i]);
+				//lfq_queue(&circleBuff, (void*)&buffer[i + 1]);
 			}
 			clock_gettime(CLOCK_MONOTONIC, &t4);
 			printf("time for read and process = %jd\n", timediff(&t3,&t4));
 
-			lfq_advance();
+			//lfq_advance();
 
 			if (sz == 0)
 				break;
