@@ -13,10 +13,6 @@
 #include "seniorDesignLib.h"
 #include "../libbeaglelogic.h"
 
-//counters to keep track of how many times forward and backward has been seen
-int countforward = 0;
-int countbackward = 0;
-int counterror = 0;
 int i;
 
 int Rand_Int(int a, int b)
