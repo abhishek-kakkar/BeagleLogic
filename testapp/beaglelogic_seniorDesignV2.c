@@ -293,7 +293,7 @@ int main(int argc, char **argv)
 	package_t.bfd_cpy = bfd;
 	package_t.pollfd = pollfd;
 
-	if (start_MQTT_t(&package_t, MQTT_thread)) {
+	if (start_MQTT_t(&package_t, MQTT_t)) {
 		return 1;
 	}
 
