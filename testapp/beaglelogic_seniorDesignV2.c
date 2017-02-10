@@ -39,6 +39,14 @@ uint8_t *buf,*bl_mem;
 pthread_t process_t;
 pthread_t MQTT_t;
 
+typedef struct {
+
+	struct lfq *ptr_lfq;
+	struct pollfd pollfd;
+	int bfd_cpy;
+
+} seniorDesignPackage;
+
 /* For testing nonblocking IO */
 #define NONBLOCK
 
