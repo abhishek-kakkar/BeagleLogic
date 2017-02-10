@@ -84,21 +84,6 @@ void segfaulthandler(int x)
 	exit(-1);
 }
 
-/* Helper function to start MQTT thread*/
-int start_MQTT_t(void *ptr_package, pthread_t MQTT_t) {
-
-	printf("Creating MQTT Thread\n");
-	if (pthread_create(&MQTT_t, NULL, MQTT_thread, ptr_package)) {
-
-		printf("failed to create thread\n");
-		return 1;
-	}
-	printf("Thread created\n");
-
-	//	pthread_join(MQTT_t,NULL);
-	return 0;
-}
-
 /* MQTT thread*/
 void *MQTT_thread(void *ptr_package) {
 
@@ -114,6 +99,21 @@ void *MQTT_thread(void *ptr_package) {
 
 	printf("hello from MQTT thread");
 	return NULL;
+}
+
+/* Helper function to start MQTT thread*/
+int start_MQTT_t(void *ptr_package, pthread_t MQTT_t) {
+
+	printf("Creating MQTT Thread\n");
+	if (pthread_create(&MQTT_t, NULL, MQTT_thread, ptr_package)) {
+
+		printf("failed to create thread\n");
+		return 1;
+	}
+	printf("Thread created\n");
+
+	//	pthread_join(MQTT_t,NULL);
+	return 0;
 }
 
 /* Quadrature counting*/
