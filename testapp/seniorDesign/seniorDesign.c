@@ -122,11 +122,8 @@ void *MQTT_thread(void *ptr_package){
 	seniorDesignPackage *package = (seniorDesignPackage*) ptr_package;
 	for(i=0; i< 4*1000*1000; i++){
 
-		char *ptr_lfq_element = (char*) lfq_dequeue(package->ptr_lfq);
-		char lfq_element = *ptr_lfq_element;
-
-		// do stuff here
-		//printf("value dequeue %2x\n",lfq_element );
+		// Send to MQTT
+		//printf("Hello\n");
 	}
 
 	printf("hello from MQTT thread");

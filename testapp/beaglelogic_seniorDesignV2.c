@@ -37,6 +37,7 @@ int counterror = 0;
 uint8_t *buf,*bl_mem;
 
 pthread_t MQTT_t;
+sem_t MQTT_mutex;
 
 /* For testing nonblocking IO */
 #define NONBLOCK
@@ -75,6 +76,14 @@ void segfaulthandler(int x)
 	exit(-1);
 }
 
+/* Handles itimer */
+void timer_handler(int signum) {
+
+	static int count = 0;
+	printf("hello\n");
+	sem_post(&MQTT_mutex);
+}
+
 int main(int argc, char **argv)
 {
 	int cnt1;
@@ -86,7 +95,12 @@ int main(int argc, char **argv)
 	struct timespec t1, t2, t3, t4;
 	struct pollfd pollfd;
 	struct lfq circleBuff;
+	struct sigaction sa;
+	struct itimerval timer;
 	seniorDesignPackage package_t;
+
+	/* Init Sempahore */
+	sem_init(&MQTT_mutex, 0, 10);
 
 
 	printf("BeagleLogic test application\n");
@@ -119,6 +133,21 @@ int main(int argc, char **argv)
 	signal(SIGINT, exithandler);
 	signal(SIGSEGV, segfaulthandler);
 
+	/* Install timer handler */
+	memset(&sa, 0, sizeof(sa));
+	sa.sa_handler = &timer_handler;
+	sigaction(SIGVTALRM, &sa, NULL);
+
+	/* Configure timer to expire after .5 sec */
+	timer.it_value.tv_sec = 0;
+	timer.it_value.tv_usec = 500000;
+	/* Create the interval with the same time */
+	tiemr.it_interval.tv_sec = 0;
+	timer.it_interval.tv_usec = 500000;
+	/* Start a .5 timer that increase the MQTT_mutex semaphore */
+	settimer(ITIMER_VIRTUAL, &timer, NULL);
+
+
 	/* Configure buffer size - we need a minimum of 32 MB */
 	beaglelogic_get_buffersize(bfd, &sz_to_read);
 	if (sz_to_read < 32 * 1024 * 1024) {
@@ -143,12 +172,10 @@ int main(int argc, char **argv)
 	beaglelogic_start(bfd);
 
 	/* All set, start a capture */
-
 	/*Initialize lfq*/
-	void*  buff_ptr = (void *)malloc(32 * 1000 * 1000 * sizeof(void));
-	void** buff_pptr = buff_ptr;
-
-	lfq_init(&circleBuff, 32* 1000 * 1000, buff_pptr);
+	//void*  buff_ptr = (void *)malloc(32 * 1000 * 1000 * sizeof(void));
+	//void** buff_pptr = buff_ptr;
+	//lfq_init(&circleBuff, 32* 1000 * 1000, buff_pptr);
 
 	/*Spawn MQTT thread*/
 	package_t.ptr_lfq = &circleBuff;
@@ -171,8 +198,8 @@ int main(int argc, char **argv)
 		int i;
 		while (cnt1 < sz_to_read && pollfd.revents) {
 
-			/*Start a timer*/
-			clock_gettime(CLOCK_MONOTONIC, &t3);
+			/*Start a timer for Debug */
+			//clock_gettime(CLOCK_MONOTONIC, &t3);
 
 			sz = read(bfd, buffer, 4*1000*1000);
 
@@ -192,8 +219,9 @@ int main(int argc, char **argv)
 
 			}
 
-			clock_gettime(CLOCK_MONOTONIC, &t4);
-			printf("time for read and process = %jd\n", timediff(&t3,&t4));
+			/* Debug timer */
+			//clock_gettime(CLOCK_MONOTONIC, &t4);
+			//printf("time for read and process = %jd\n", timediff(&t3,&t4));
 
 			if (sz == 0)
 				break;
