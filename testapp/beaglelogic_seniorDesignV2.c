@@ -30,9 +30,9 @@
 int bfd, i;
 
 /* Globals to Keep Track Of */
-countforward = 0;
-countbackward = 0;
-counterror = 0;
+int countforward = 0;
+int countbackward = 0;
+int counterror = 0;
 
 uint8_t *buf,*bl_mem;
 
