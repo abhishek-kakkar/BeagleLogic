@@ -18,8 +18,9 @@
 #include <sys/poll.h>
 #include <sys/errno.h>
 #include <sys/mman.h>
+#include <sys/time.h>
 #include <pthread.h>
-
+#include <semaphore.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -142,10 +143,10 @@ int main(int argc, char **argv)
 	timer.it_value.tv_sec = 0;
 	timer.it_value.tv_usec = 500000;
 	/* Create the interval with the same time */
-	tiemr.it_interval.tv_sec = 0;
+	timer.it_interval.tv_sec = 0;
 	timer.it_interval.tv_usec = 500000;
 	/* Start a .5 timer that increase the MQTT_mutex semaphore */
-	settimer(ITIMER_VIRTUAL, &timer, NULL);
+	setitimer(ITIMER_VIRTUAL, &timer, NULL);
 
 
 	/* Configure buffer size - we need a minimum of 32 MB */
@@ -243,7 +244,7 @@ int main(int argc, char **argv)
 #endif
 		cnt += cnt1;
 	}
-	
+
 	clock_gettime(CLOCK_MONOTONIC, &t2);
 
 	printf("Read %d bytes in %jd us, speed=%jd MB/s\n",
