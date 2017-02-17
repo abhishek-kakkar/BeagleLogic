@@ -13,58 +13,110 @@
 #include "seniorDesignLib.h"
 #include "../libbeaglelogic.h"
 
-int i;
 
 int Rand_Int(int a, int b)
 {
 	return (rand() % (a + b + 1) + a);
 }
 
-void *process_thread(void *ptr_package) {
+/* Quadrature counting */
+inline void quadrature_counter(int buffer1, int buffer2)
+{
+	const int FORWARDCONSTANT = 0b10101010; //constant that contains 4 bit pairs going forward
+	const int BACKWARDCONSTANT = 0b01010101; //constant that contains 4 bit pairs going backward
 
-	size_t sz;
-	seniorDesignPackage *package = (seniorDesignPackage*)ptr_package;
+	static int past[2] = { 0x00, 0x00 }; //holds last run (static)
+	int read[2]; //place both buffer values into int array
+	int temp = 0x00; //variable to hold masked value
 
-	printf("hellos from process thread\n");
+	int forwardcheck = 0b10000000; //compares temp to forward value "10"
+	int backwardcheck = 0b01000000; //compares temp to backward value "01"
+	int mask = 0b11000000; //masks two bits at a time
 
-	while (1) {
+	int j = 0; //loop counters
 
-		/*when on BBB*/
-		/*Cread 4MB buffer*/
-		char buffer[4 * 1000 * 1000];
+	read[0] = buffer1;
+	read[1] = buffer2;
 
-		/*start reading*/
-		poll(&package->pollfd, 1, 500);
-		for (i=0; i < 4 * 1000 * 1000; i+=2) {
+	/*put this if outside of he function so we don't have to jump*/
+	//present run = last run, do nothing
+	//printf("Past[0]= %d Past[1]= %d \n", past[0], past[1]);
+	//printf("Current[0]= %d Current[1]= %d \n", read[0], read[1]);
 
-			sz = read(package->bfd_cpy, buffer, 4 * 1000 * 1000);
+	// if all bit pairs in the first byte are going forward, avoid shifting just add 4 to forward count
+	if (read[0] == FORWARDCONSTANT)
+	{
+		countforward = countforward + 4;
+	}
 
-			printf("%2x %2x\n", buffer[i], buffer[i+1]);
+	// if all bit pairs in the first byte are going backward, avoid shifting just add 4 to backward count
+	else if (read[0] == BACKWARDCONSTANT)
+	{
+		countbackward = countbackward + 4;
+	}
 
-			/*Quadrature_counter*/
-			quadrature_counter((int) buffer[i], (int) buffer[i + 1]);
+	/*If different check bit pairs individually.
+	Loop 5 times to check the 4 bit pairs in the first byte and the first bit pair in the second byte.
+	The next bit pair (bits 10-11) are the prover input so it will have no impact on counters.
+	The next 2 bit pairs (12-15) will always be grounded as we cannot access them and thus will have no impact on counters.*/
 
-			/*store in circular buffer*/
-			lfq_queue(package->ptr_lfq, (void*)&buffer[i]);
-			lfq_queue(package->ptr_lfq, (void*)&buffer[i + 1]);
-
-			if (sz == 0) {
-
-				printf("I am breaking things\n");
-				break;
+	else
+	{
+		i = 0;
+		for (j = 0; j< 5; j++)
+		{
+			if (j == 4)
+			{
+				i = 1; //if the 4 bit pairs in the first byte have already been checked, increase i to check second byte.
+					   //Also restore the checks and mask before checking the second byte
+				forwardcheck = 0b10000000;
+				backwardcheck = 0b01000000;
+				mask = 0b11000000;
 			}
-			else if (sz == -1) {
-				poll(&package->pollfd, 1, 500);
-				continue;
+
+			temp = 0x00; //clear temp every run
+			temp = read[i] & mask; //access bits
+
+								   //check for errors - bit pairs "11" or "00"
+			if ((temp == mask) || (temp == 0))
+			{
+				counterror++;
+				//printf("count error\n");
 			}
+
+			//check for forward flow - bit pair "10"
+			else if ((temp & forwardcheck) == forwardcheck)
+			{
+				countforward++;
+				//printf("count fwd\n");
+			}
+
+			//check for backward flow - bit pair "01"
+			else if ((temp & backwardcheck) == backwardcheck) //else if later
+			{
+				countbackward++;
+				//printf("count back\n");
+			}
+
+			//catch all - error in value read
+			else
+			{
+				printf("ERROR SHOULD NOT HAVE ENTERED HERE");
+			}
+
+			//shift values right by two to check next two bits
+			forwardcheck = forwardcheck >> 2;
+			backwardcheck = backwardcheck >> 2;
+			mask = mask >> 2;
 		}
 	}
 
-	printf("hello from process thread\n");
-	return NULL;
-
+	//set past = present for next run
+	past[0] = read[0];
+	past[1] = read[1];
 }
 
+/* Thread handler*/
 void *MQTT_thread(void *ptr_package){
 
 	seniorDesignPackage *package = (seniorDesignPackage*) ptr_package;
@@ -81,22 +133,7 @@ void *MQTT_thread(void *ptr_package){
 	return NULL;
 }
 
-/*Helper function to start process thread*/
-int start_process_t(void *ptr_package, pthread_t process_t){
-
-	printf("Creating Process Thread\n");
-	if (pthread_create(&process_t, NULL, process_thread, ptr_package)) {
-
-		printf("failed to create thread\n");
-		return 1;
-	}
-	printf("Thread created\n");
-
-	pthread_join(process_t, NULL);
-	return 0;
-}
-
-/*Helper function to start MQTT thread*/
+/* Helper function to start MQTT thread */
 int start_MQTT_t(void *ptr_package, pthread_t MQTT_t) {
 
 	printf("Creating MQTT Thread\n");

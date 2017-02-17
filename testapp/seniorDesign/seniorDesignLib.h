@@ -9,7 +9,12 @@
 #ifndef SENIORDESIGNLIB_H_
 #define SENIORDESIGNLIB_H_
 
+int i;
 
+//counters to keep track of how many times forward and backward has been seen
+int countforward = 0;
+int countbackward = 0;
+int counterror = 0;
 
 typedef struct {
 
