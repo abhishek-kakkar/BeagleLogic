@@ -12,9 +12,9 @@
 int i;
 
 //counters to keep track of how many times forward and backward has been seen
-int countforward = 0;
-int countbackward = 0;
-int counterror = 0;
+int countforward;
+int countbackward;
+int counterror;
 
 typedef struct {
 
