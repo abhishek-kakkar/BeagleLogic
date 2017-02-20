@@ -9,9 +9,17 @@
 #include <pthread.h>
 #include <stdint.h>
 #include <unistd.h>
+#include "semaphore.h"
 #include "lfq.h"
+#include "MQTTClient.h"
 #include "seniorDesignLib.h"
 #include "../libbeaglelogic.h"
+
+#define ADDRESS		"tcp://localhost:1883"
+#define CLIENTID	"FMCFlow"
+#define TOPIC		"MQTTTest"
+#define QOS			1
+#define TIMEOUT		10000L
 
 
 int Rand_Int(int a, int b)
@@ -119,12 +127,48 @@ inline void quadrature_counter(int buffer1, int buffer2)
 /* Thread handler*/
 void *MQTT_thread(void *ptr_package){
 
-	seniorDesignPackage *package = (seniorDesignPackage*) ptr_package;
-	for(i=0; i< 4*1000*1000; i++){
+	seniorDesignPackage *package = (seniorDesignPackage*)ptr_package;
+	int rc; 
+	string PAYLOAD = "hi"; 
+	/* Init MQTT*/
+	MQTTClient client;
+	MQTTClient_connectionOptions conn_opts = MQTTClient_connectOptions_initializer;
+	MQTTClient_message pubmsg = MQTTClient_message_initializer;
+	MQTTClient_deliveryToken token;
 
-		// Send to MQTT
-		//printf("Hello\n");
+	MQTTClient_create(&client, ADDRESS, CLIENTID, MQTTCLIENT_PERSISTENCE_NONE, NULL);
+	conn_opts.keepAliveInterval = 20;
+	conn_opts.cleansession = 1;
+
+	if ((rc = MQTTClient_connect(client, &conn_opts)) != MQTTCLIENT_SUCCESS)
+	{
+		printf("Failed to connect, return code %d\n", rc);
+		exit(-1);
 	}
+
+	
+	while(!MQTTdone){
+
+		/* Wait on signal */ 
+		sem_wait(package->MQTT_mutex);
+
+		/* Send message */
+		pubmsg.payload = PAYLOAD;
+		pubmsg.payloadlen = strlen(PAYLOAD);
+		pubmsg.qos = QOS;
+		pubmsg.retained = 0;
+		MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
+		printf("Waiting for up to %d seconds for publication of %s\n"
+			"on topic %s for client with ClientID: %s\n",
+			(int)(TIMEOUT / 1000), PAYLOAD, TOPIC, CLIENTID);
+		rc = MQTTClient_waitForCompletion(client, token, TIMEOUT);
+		printf("Message with delivery token %d delivered\n", token);
+
+	}
+
+	MQTTClient_disconnect(client, 10000);
+	MQTTClient_destroy(&client);
+	return rc;
 
 	printf("hello from MQTT thread");
 	return NULL;

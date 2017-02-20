@@ -18,12 +18,10 @@
 #include <sys/poll.h>
 #include <sys/errno.h>
 #include <sys/mman.h>
-#include <sys/time.h>
 #include <pthread.h>
 #include <semaphore.h>
 #include <time.h>
 #include <unistd.h>
-
 #include "seniorDesign/lfq.h"
 #include "seniorDesign/seniorDesignLib.h"
 #include "libbeaglelogic.h"
@@ -143,10 +141,10 @@ int main(int argc, char **argv)
 	timer.it_value.tv_sec = 0;
 	timer.it_value.tv_usec = 500000;
 	/* Create the interval with the same time */
-	timer.it_interval.tv_sec = 0;
+	tiemr.it_interval.tv_sec = 0;
 	timer.it_interval.tv_usec = 500000;
 	/* Start a .5 timer that increase the MQTT_mutex semaphore */
-	setitimer(ITIMER_VIRTUAL, &timer, NULL);
+	settimer(ITIMER_VIRTUAL, &timer, NULL);
 
 
 	/* Configure buffer size - we need a minimum of 32 MB */
@@ -155,12 +153,9 @@ int main(int argc, char **argv)
 		beaglelogic_set_buffersize(bfd, sz_to_read = 32 * 1024 * 1024);
 		beaglelogic_get_buffersize(bfd, &sz_to_read);
 	}
-
 	buf = calloc(sz_to_read / 32, 32);
 	memset(buf, 0xFF, sz_to_read);
-
 	printf("Buffer size = %d MB \n", sz_to_read / (1024 * 1024));
-
 
 	/* Configure capture settings */
 	clock_gettime(CLOCK_MONOTONIC, &t1);
@@ -170,18 +165,22 @@ int main(int argc, char **argv)
 	clock_gettime(CLOCK_MONOTONIC, &t2);
 	printf("Configured in %jd us\n", timediff(&t1, &t2));
 
+	/* All set, start a capture */
 	beaglelogic_start(bfd);
 
-	/* All set, start a capture */
+	/* This will problem be removed */
 	/*Initialize lfq*/
 	//void*  buff_ptr = (void *)malloc(32 * 1000 * 1000 * sizeof(void));
 	//void** buff_pptr = buff_ptr;
 	//lfq_init(&circleBuff, 32* 1000 * 1000, buff_pptr);
 
+	// MQTT configuration 
+	
 	/*Spawn MQTT thread*/
 	package_t.ptr_lfq = &circleBuff;
 	package_t.bfd_cpy = bfd;
 	package_t.pollfd = pollfd;
+	package_t.MQTT_mutex = MQTT_mutex; 
 
 	if (start_MQTT_t(&package_t, MQTT_t)) {
 		return 1;
@@ -244,7 +243,7 @@ int main(int argc, char **argv)
 #endif
 		cnt += cnt1;
 	}
-
+	
 	clock_gettime(CLOCK_MONOTONIC, &t2);
 
 	printf("Read %d bytes in %jd us, speed=%jd MB/s\n",
