@@ -21,6 +21,7 @@ typedef struct {
 	struct lfq *ptr_lfq;
 	struct pollfd pollfd;
 	int bfd_cpy;
+	sem_t *MQTT_mutex;
 
 } seniorDesignPackage;
 

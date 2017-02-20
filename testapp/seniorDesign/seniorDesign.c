@@ -9,9 +9,18 @@
 #include <pthread.h>
 #include <stdint.h>
 #include <unistd.h>
+#include <string.h>
+#include "semaphore.h"
 #include "lfq.h"
+#include "MQTTClient.h"
 #include "seniorDesignLib.h"
 #include "../libbeaglelogic.h"
+
+#define ADDRESS		"tcp://localhost:1883"
+#define CLIENTID	"FMCFlow"
+#define TOPIC		"MQTTTest"
+#define QOS			1
+#define TIMEOUT		10000L
 
 
 int Rand_Int(int a, int b)
@@ -24,42 +33,27 @@ inline void quadrature_counter(int buffer1, int buffer2)
 {
 	const int FORWARDCONSTANT = 0b10101010; //constant that contains 4 bit pairs going forward
 	const int BACKWARDCONSTANT = 0b01010101; //constant that contains 4 bit pairs going backward
-
-	static int past[2] = { 0x00, 0x00 }; //holds last run (static)
 	int read[2]; //place both buffer values into int array
 	int temp = 0x00; //variable to hold masked value
-
 	int forwardcheck = 0b10000000; //compares temp to forward value "10"
 	int backwardcheck = 0b01000000; //compares temp to backward value "01"
 	int mask = 0b11000000; //masks two bits at a time
-
 	int j = 0; //loop counters
 
 	read[0] = buffer1;
 	read[1] = buffer2;
-
-	/*put this if outside of he function so we don't have to jump*/
-	//present run = last run, do nothing
-	//printf("Past[0]= %d Past[1]= %d \n", past[0], past[1]);
-	//printf("Current[0]= %d Current[1]= %d \n", read[0], read[1]);
 
 	// if all bit pairs in the first byte are going forward, avoid shifting just add 4 to forward count
 	if (read[0] == FORWARDCONSTANT)
 	{
 		countforward = countforward + 4;
 	}
-
 	// if all bit pairs in the first byte are going backward, avoid shifting just add 4 to backward count
 	else if (read[0] == BACKWARDCONSTANT)
 	{
 		countbackward = countbackward + 4;
 	}
-
-	/*If different check bit pairs individually.
-	Loop 5 times to check the 4 bit pairs in the first byte and the first bit pair in the second byte.
-	The next bit pair (bits 10-11) are the prover input so it will have no impact on counters.
-	The next 2 bit pairs (12-15) will always be grounded as we cannot access them and thus will have no impact on counters.*/
-
+	/* If different check bit pairs individually */
 	else
 	{
 		i = 0;
@@ -110,24 +104,56 @@ inline void quadrature_counter(int buffer1, int buffer2)
 			mask = mask >> 2;
 		}
 	}
-
-	//set past = present for next run
-	past[0] = read[0];
-	past[1] = read[1];
 }
 
 /* Thread handler*/
 void *MQTT_thread(void *ptr_package){
 
-	seniorDesignPackage *package = (seniorDesignPackage*) ptr_package;
-	for(i=0; i< 4*1000*1000; i++){
+	seniorDesignPackage *package = (seniorDesignPackage*)ptr_package;
+	int rc, semVal;
+	char  PAYLOAD[32] = "hi";
+	/* Init MQTT*/
+	MQTTClient client;
+	MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
+	MQTTClient_message pubmsg = MQTTClient_message_initializer;
+	MQTTClient_deliveryToken token;
 
-		// Send to MQTT
-		//printf("Hello\n");
+	MQTTClient_create(&client, ADDRESS, CLIENTID, MQTTCLIENT_PERSISTENCE_NONE, NULL);
+	conn_opts.keepAliveInterval = 20;
+	conn_opts.cleansession = 1;
+
+	if ((rc = MQTTClient_connect(client, &conn_opts)) != MQTTCLIENT_SUCCESS)
+	{
+		printf("Failed to connect, return code %d\n", rc);
+		exit(-1);
 	}
 
+	while(1){
+
+		/* Wait on signal */
+		sem_getvalue(package->MQTT_mutex, &semVal);
+		printf("semVal = %d\n", semVal); 
+		sem_wait(package->MQTT_mutex);
+
+		/* Send message */
+		pubmsg.payload = PAYLOAD;
+		pubmsg.payloadlen = strlen(PAYLOAD);
+		pubmsg.qos = QOS;
+		pubmsg.retained = 0;
+		MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
+		printf("Waiting for up to %d seconds for publication of %s\n"
+			"on topic %s for client with ClientID: %s\n",
+			(int)(TIMEOUT / 1000), PAYLOAD, TOPIC, CLIENTID);
+		rc = MQTTClient_waitForCompletion(client, token, TIMEOUT);
+		printf("Message with delivery token %d delivered\n", token);
+
+	}
+
+	MQTTClient_disconnect(client, 10000);
+	MQTTClient_destroy(&client);
+
 	printf("hello from MQTT thread");
-	return NULL;
+	//return rc;
 }
 
 /* Helper function to start MQTT thread */
