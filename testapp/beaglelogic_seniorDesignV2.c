@@ -18,6 +18,7 @@
 #include <sys/poll.h>
 #include <sys/errno.h>
 #include <sys/mman.h>
+#include <sys/time.h>
 #include <pthread.h>
 #include <semaphore.h>
 #include <time.h>
@@ -79,8 +80,11 @@ void segfaulthandler(int x)
 void timer_handler(int signum) {
 
 	static int count = 0;
-	printf("hello\n");
+	int semVal;
+	printf("hello handler\n");
+	sem_getvalue(&MQTT_mutex, &semVal);
 	sem_post(&MQTT_mutex);
+	printf("semVal after post is %d\n", semVal);
 }
 
 int main(int argc, char **argv)
@@ -141,10 +145,10 @@ int main(int argc, char **argv)
 	timer.it_value.tv_sec = 0;
 	timer.it_value.tv_usec = 500000;
 	/* Create the interval with the same time */
-	tiemr.it_interval.tv_sec = 0;
+	timer.it_interval.tv_sec = 0;
 	timer.it_interval.tv_usec = 500000;
 	/* Start a .5 timer that increase the MQTT_mutex semaphore */
-	settimer(ITIMER_VIRTUAL, &timer, NULL);
+	setitimer(ITIMER_VIRTUAL, &timer, NULL);
 
 
 	/* Configure buffer size - we need a minimum of 32 MB */
