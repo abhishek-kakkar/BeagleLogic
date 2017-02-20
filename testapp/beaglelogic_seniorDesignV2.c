@@ -184,7 +184,7 @@ int main(int argc, char **argv)
 	package_t.ptr_lfq = &circleBuff;
 	package_t.bfd_cpy = bfd;
 	package_t.pollfd = pollfd;
-	package_t.MQTT_mutex = MQTT_mutex; 
+	package_t.MQTT_mutex = &MQTT_mutex; 
 
 	if (start_MQTT_t(&package_t, MQTT_t)) {
 		return 1;
