@@ -103,7 +103,7 @@ int main(int argc, char **argv)
 	seniorDesignPackage package_t;
 
 	/* Init Sempahore */
-	sem_init(&MQTT_mutex, 0, 10);
+	sem_init(&MQTT_mutex, 0, 0);
 
 
 	printf("BeagleLogic test application\n");

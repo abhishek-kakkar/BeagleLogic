@@ -131,9 +131,9 @@ void *MQTT_thread(void *ptr_package){
 	while(1){
 
 		/* Wait on signal */
-		sem_getvalue(&package->MQTT_mutex, &semVal);
-		printf("semVal = %d/n", semVal); 
-		sem_wait(&package->MQTT_mutex);
+		sem_getvalue(package->MQTT_mutex, &semVal);
+		printf("semVal = %d\n", semVal); 
+		sem_wait(package->MQTT_mutex);
 
 		/* Send message */
 		pubmsg.payload = PAYLOAD;
