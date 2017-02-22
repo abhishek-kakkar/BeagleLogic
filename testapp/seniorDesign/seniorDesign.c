@@ -24,7 +24,7 @@
 
 
 /* Queue data for publishing over MQTT */
-inline void queueData(void *MQTT_package) {
+inline void MQTT_queueData(void *MQTT_package) {
 	/* Update semaphore */
 	int semVal;
 	printf("hello handler\n");
@@ -146,7 +146,7 @@ void *MQTT_thread(void *MQTT_package){
 		sem_wait(package->MQTT_mutex);
 
 		/* CHANGE LATER */
-		PAYLOAD = "HELLO";
+		//PAYLOAD = "HELLO";
 
 		/* Send message */
 		pubmsg.payload = PAYLOAD;

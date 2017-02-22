@@ -199,12 +199,13 @@ int main(int argc, char **argv)
 				//printf("%2x %2x\n", buffer[i], buffer[i + 1]);
 
 				/* Check past with present values */
-				if (buffer[i] != buffer[i-2] || buffer[i + 1] != buffer[i-1])
+				if (buffer[i] != buffer[i-2] || buffer[i + 1] != buffer[i-1]){
 					quadrature_counter(buffer[i], buffer[i + 1]);
-				
+				}
 				/* check to see if we need to transmit */
-				if (pub_signal)
-					queueData(&package_t);
+				if (pub_signal){
+					MQTT_queueData(&package_t);
+				}
 			}
 
 			/* Debug timer */

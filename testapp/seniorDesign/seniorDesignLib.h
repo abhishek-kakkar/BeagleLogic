@@ -16,7 +16,7 @@ extern int countforward;
 extern int countbackward;
 extern int counterror;
 extern int pub_signal;
-
+extern sem_t MQTT_mutex;
 typedef struct {
 
 	struct lfq *ptr_lfq;
@@ -25,10 +25,10 @@ typedef struct {
 	sem_t *MQTT_mutex;
 
 	/* Counters to Publish*/
-	int countforward;
-	int countbackward;
-	int counterror;
-	int risingEdgeTime[10];
+	int MQTT_countforward;
+	int MQTT_countbackward;
+	int MQTT_counterror;
+	int MQTT_risingEdgeTime[10];
 
 
 } MQTT_Package;
@@ -41,7 +41,7 @@ int  start_process_t();
 int  start_MQTT_t();
 void *process_thread(void *ptr_package);
 void *MQTT_thread(void *ptr_package);
-void queueData(void *MQTT_package)
-
+void MQTT_queueData(void *MQTT_package);
+void quadrature_counter(int buffer1, int buffer2);
 
 #endif /* SENIORDESIGNLIB_H_ */
