@@ -23,7 +23,6 @@
 #include <semaphore.h>
 #include <time.h>
 #include <unistd.h>
-#include "seniorDesign/lfq.h"
 #include "seniorDesign/seniorDesignLib.h"
 #include "libbeaglelogic.h"
 
@@ -33,6 +32,7 @@ int bfd, i;
 int countforward = 0;
 int countbackward = 0;
 int counterror = 0;
+int pub_signal = 0; 
 
 uint8_t *buf,*bl_mem;
 
@@ -79,12 +79,8 @@ void segfaulthandler(int x)
 /* Handles itimer */
 void timer_handler(int signum) {
 
-	static int count = 0;
-	int semVal;
-	printf("hello handler\n");
-	sem_getvalue(&MQTT_mutex, &semVal);
-	sem_post(&MQTT_mutex);
-	printf("semVal after post is %d\n", semVal);
+	/* Set Flag */
+	pub_signal = 1; 
 }
 
 int main(int argc, char **argv)
@@ -97,10 +93,9 @@ int main(int argc, char **argv)
 	char past[2];
 	struct timespec t1, t2, t3, t4;
 	struct pollfd pollfd;
-	struct lfq circleBuff;
 	struct sigaction sa;
 	struct itimerval timer;
-	seniorDesignPackage package_t;
+	MQTT_Package package_t;
 
 	/* Init Sempahore */
 	sem_init(&MQTT_mutex, 0, 0);
@@ -172,20 +167,10 @@ int main(int argc, char **argv)
 	/* All set, start a capture */
 	beaglelogic_start(bfd);
 
-	/* This will problem be removed */
-	/*Initialize lfq*/
-	//void*  buff_ptr = (void *)malloc(32 * 1000 * 1000 * sizeof(void));
-	//void** buff_pptr = buff_ptr;
-	//lfq_init(&circleBuff, 32* 1000 * 1000, buff_pptr);
-
-	// MQTT configuration 
-	
-	/*Spawn MQTT thread*/
-	package_t.ptr_lfq = &circleBuff;
+	/* Spawn MQTT thread */
 	package_t.bfd_cpy = bfd;
 	package_t.pollfd = pollfd;
 	package_t.MQTT_mutex = &MQTT_mutex; 
-
 	if (start_MQTT_t(&package_t, MQTT_t)) {
 		return 1;
 	}
@@ -213,14 +198,13 @@ int main(int argc, char **argv)
 				/*Debug*/
 				//printf("%2x %2x\n", buffer[i], buffer[i + 1]);
 
-				if (buffer[i] != past[0] || buffer[i + 1] != past[1]) {
+				/* Check past with present values */
+				if (buffer[i] != buffer[i-2] || buffer[i + 1] != buffer[i-1])
 					quadrature_counter(buffer[i], buffer[i + 1]);
-				}
-
-				/*Upadte past value*/
-				past[0] = buffer[i];
-				past[1] = buffer[i + 1];
-
+				
+				/* check to see if we need to transmit */
+				if (pub_signal)
+					queueData(&package_t);
 			}
 
 			/* Debug timer */

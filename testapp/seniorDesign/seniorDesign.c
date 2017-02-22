@@ -23,9 +23,17 @@
 #define TIMEOUT		10000L
 
 
-int Rand_Int(int a, int b)
-{
-	return (rand() % (a + b + 1) + a);
+/* Queue data for publishing over MQTT */
+inline void queueData(void *MQTT_package) {
+	/* Update semaphore */
+	int semVal;
+	printf("hello handler\n");
+	sem_getvalue(&MQTT_mutex, &semVal);
+	sem_post(&MQTT_mutex);
+	printf("semVal after post is %d\n", semVal);
+
+	/* Set Flag to 0*/
+	pub_signal = 0;
 }
 
 /* Quadrature counting */
@@ -107,17 +115,19 @@ inline void quadrature_counter(int buffer1, int buffer2)
 }
 
 /* Thread handler*/
-void *MQTT_thread(void *ptr_package){
+void *MQTT_thread(void *MQTT_package){
 
-	seniorDesignPackage *package = (seniorDesignPackage*)ptr_package;
+	MQTT_Package *package = (MQTT_Package*)MQTT_package;
 	int rc, semVal;
-	char  PAYLOAD[32] = "hi";
+	char PAYLOAD[100] = "";
+
 	/* Init MQTT*/
 	MQTTClient client;
 	MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
 	MQTTClient_message pubmsg = MQTTClient_message_initializer;
 	MQTTClient_deliveryToken token;
 
+	/* create connection */
 	MQTTClient_create(&client, ADDRESS, CLIENTID, MQTTCLIENT_PERSISTENCE_NONE, NULL);
 	conn_opts.keepAliveInterval = 20;
 	conn_opts.cleansession = 1;
@@ -134,6 +144,9 @@ void *MQTT_thread(void *ptr_package){
 		sem_getvalue(package->MQTT_mutex, &semVal);
 		printf("semVal = %d\n", semVal); 
 		sem_wait(package->MQTT_mutex);
+
+		/* CHANGE LATER */
+		PAYLOAD = "HELLO";
 
 		/* Send message */
 		pubmsg.payload = PAYLOAD;
@@ -157,10 +170,10 @@ void *MQTT_thread(void *ptr_package){
 }
 
 /* Helper function to start MQTT thread */
-int start_MQTT_t(void *ptr_package, pthread_t MQTT_t) {
+int start_MQTT_t(void *MQTT_package, pthread_t MQTT_t) {
 
 	printf("Creating MQTT Thread\n");
-	if (pthread_create(&MQTT_t, NULL, MQTT_thread, ptr_package)) {
+	if (pthread_create(&MQTT_t, NULL, MQTT_thread, MQTT_package)) {
 
 		printf("failed to create thread\n");
 		return 1;

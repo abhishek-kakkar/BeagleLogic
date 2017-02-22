@@ -15,6 +15,7 @@ int i;
 extern int countforward;
 extern int countbackward;
 extern int counterror;
+extern int pub_signal;
 
 typedef struct {
 
@@ -23,7 +24,14 @@ typedef struct {
 	int bfd_cpy;
 	sem_t *MQTT_mutex;
 
-} seniorDesignPackage;
+	/* Counters to Publish*/
+	int countforward;
+	int countbackward;
+	int counterror;
+	int risingEdgeTime[10];
+
+
+} MQTT_Package;
 
 //Bit processing
 int Rand_Int(int a, int b);
@@ -33,7 +41,7 @@ int  start_process_t();
 int  start_MQTT_t();
 void *process_thread(void *ptr_package);
 void *MQTT_thread(void *ptr_package);
-
+void queueData(void *MQTT_package)
 
 
 #endif /* SENIORDESIGNLIB_H_ */
