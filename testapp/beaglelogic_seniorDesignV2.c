@@ -202,7 +202,7 @@ int main(int argc, char **argv)
 
 				/* Check past with present values */
 				if (buffer[i] != buffer[i-2] || buffer[i + 1] != buffer[i-1]){
-					quadrature_counter(buffer[i], buffer[i + 1]);
+					changeState(buffer[i], buffer[i + 1]);
 				}
 				/* check to see if we need to transmit */
 				if (pub_signal){
