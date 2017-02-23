@@ -16,12 +16,214 @@
 #include "seniorDesignLib.h"
 #include "../libbeaglelogic.h"
 
+/* State Data values */
+#define dataLH 0b01000000
+#define dataHL 0b10000000
+#define dataHH 0b11000000
+
+/* MQTT defined values */
 #define ADDRESS		"tcp://localhost:1883"
 #define CLIENTID	"FMCFlow"
 #define TOPIC		"MQTTTest"
 #define QOS			1
 #define TIMEOUT		10000L
 
+state presentState[5]={INIT};
+state previousState=INIT;//for use with stateINIT only
+u32int risingEdgeCounts[10]={0};
+u32int channelTimes[10]={0};
+
+/* Quadrature state machine */
+void changeState(current1,current2){
+  int read = current1;
+  int temp = 0x00; //clear temp every run
+  int mask = dataHH;
+  stateData.LH = dataLH;
+  stateData.HL = dataHL;
+  stateData.HH = dataHH;
+
+  for(i=0; i<5; i++){
+
+    if(i==4){
+      stateData.LH = dataLH;
+      stateData.HL = dataHL;
+      stateData.HH = dataHH;
+      mask = dataHH;
+      read = current2;
+    }
+
+    temp = read & mask; //access bits step 1
+
+    switch(presentState[i]){
+      case LL:
+        stateLL(temp);
+        break;
+      case LH:
+        stateLH(temp);
+        break;
+      case HL:
+        stateHL(temp)
+        break;
+      case HH:
+        stateHH(temp);
+        break;
+      default:
+        stateINIT(temp,previousState);
+        break;
+    }
+
+    stateData.LH = stateData.LH >>2;
+    stateData.HL = stateData.HL >>2;
+    stateData.HH = stateData.HH >>2;
+    mask = mask >> 2;
+  }
+}
+
+/* state functions */
+void stateLL(int temp){
+
+  switch(temp){
+    case stateData.LH:
+      risingEdgeCounts[i*2+1]++;
+      countbackward++;
+      presentState[i] = LH;
+      break;
+    case stateData.HL:
+      risingEdgeCounts[i*2]++;
+      countforward++;
+      presentState[i] = HL;
+      break;
+    case 0:
+      break;
+    case stateData.HH:
+      risingEdgeCounts[i*2]++;
+      risingEdgeCounts[i*2+1]++;
+      counterror++;
+      presentState[i] = INIT;
+      previousState = LL;
+      break;
+    default:
+      printf("Error\n");
+      presentState[i] = INIT;
+      previousState = LL;
+      break;
+  }
+}
+
+void stateLH(int temp){
+
+  switch(temp){
+    case stateData.LH:
+      break;
+    case stateData.HL:
+      risingEdgeCounts[i*2]++;
+      counterror++;
+      presentState[i] = INIT;
+      previousState = LH;
+      break;
+    case 0:
+      countforward++;
+      presentState[i] = LL;
+      break;
+    case stateData.HH:
+      risingEdgeCounts[i*2]++;
+      countbackward++;
+      presentState[i] = HH;
+      break;
+    default:
+      printf("Error\n");
+      presentState[i] = INIT;
+      previousState = LH;
+      break;
+  }
+}
+
+void stateHL(int temp){
+
+  switch(temp){
+    case stateData.LH:
+      risingEdgeCounts[i*2+1]++;
+      counterror++;
+      presentState[i] = INIT;
+      previousState = HL;
+      break;
+    case stateData.HL:
+      break;
+    case 0:
+      countbackward++;
+      presentState[i] = LL;
+      break;
+    case stateData.HH:
+      risingEdgeCounts[i*2+1]++;
+      countforward++;
+      presentState[i] = HH;
+      break;
+    default:
+      printf("Error\n");
+      presentState[i] = INIT;
+      previousState = HL;
+      break;
+  }
+}
+
+void stateHH(int temp){
+
+  switch(temp){
+    case stateData.LH:
+      countforward++;
+      presentState[i] = LH;
+      break;
+    case stateData.HL:
+      countbackward++;
+      presentState[i] = HL;
+      break;
+    case 0:
+      counterror++;
+      presentState[i] = INIT;
+      previousState = HH;
+      break;
+    case stateData.HH:
+      break;
+    default:
+      printf("Error\n");
+      presentState[i] = INIT;
+      previousState = HH;
+      break;
+  }
+}
+
+void stateINIT(int temp, state previous){
+
+  switch(temp){
+    case stateData.LH:
+      if(previous == LL || previous == HL)
+        risingEdgeCounts[i*2+1]++;
+      presentState[i] = LH;
+      break;
+    case stateData.HL:
+      if(previous == LL || previous == LH)
+        risingEdgeCounts[i*2]++;
+      presentState[i] = HL;
+      break;
+    case 0:
+      presentState[i] = LL;
+      break;
+    case stateData.HH:
+      if(previousState == HL || previousState == LL){
+        risingEdgeCounts[i*2+1]++;
+      }
+      if(previousState == LH || previousState == LL){
+        risingEdgeCounts[i*2]++;
+      }
+      presentState[i] = HH;
+      break;
+    default:
+      printf("Error\n");
+      presentState[i] = INIT;
+      previousState = INIT;
+      break;
+  }
+}
 
 /* Queue data for publishing over MQTT */
 inline void MQTT_queueData(void *MQTT_package) {
@@ -34,84 +236,6 @@ inline void MQTT_queueData(void *MQTT_package) {
 
 	/* Set Flag to 0*/
 	pub_signal = 0;
-}
-
-/* Quadrature counting */
-inline void quadrature_counter(int buffer1, int buffer2)
-{
-	const int FORWARDCONSTANT = 0b10101010; //constant that contains 4 bit pairs going forward
-	const int BACKWARDCONSTANT = 0b01010101; //constant that contains 4 bit pairs going backward
-	int read[2]; //place both buffer values into int array
-	int temp = 0x00; //variable to hold masked value
-	int forwardcheck = 0b10000000; //compares temp to forward value "10"
-	int backwardcheck = 0b01000000; //compares temp to backward value "01"
-	int mask = 0b11000000; //masks two bits at a time
-	int j = 0; //loop counters
-
-	read[0] = buffer1;
-	read[1] = buffer2;
-
-	// if all bit pairs in the first byte are going forward, avoid shifting just add 4 to forward count
-	if (read[0] == FORWARDCONSTANT)
-	{
-		countforward = countforward + 4;
-	}
-	// if all bit pairs in the first byte are going backward, avoid shifting just add 4 to backward count
-	else if (read[0] == BACKWARDCONSTANT)
-	{
-		countbackward = countbackward + 4;
-	}
-	/* If different check bit pairs individually */
-	else
-	{
-		i = 0;
-		for (j = 0; j< 5; j++)
-		{
-			if (j == 4)
-			{
-				i = 1; //if the 4 bit pairs in the first byte have already been checked, increase i to check second byte.
-					   //Also restore the checks and mask before checking the second byte
-				forwardcheck = 0b10000000;
-				backwardcheck = 0b01000000;
-				mask = 0b11000000;
-			}
-
-			temp = 0x00; //clear temp every run
-			temp = read[i] & mask; //access bits
-
-								   //check for errors - bit pairs "11" or "00"
-			if ((temp == mask) || (temp == 0))
-			{
-				counterror++;
-				//printf("count error\n");
-			}
-
-			//check for forward flow - bit pair "10"
-			else if ((temp & forwardcheck) == forwardcheck)
-			{
-				countforward++;
-				//printf("count fwd\n");
-			}
-
-			//check for backward flow - bit pair "01"
-			else if ((temp & backwardcheck) == backwardcheck) //else if later
-			{
-				countbackward++;
-				//printf("count back\n");
-			}
-
-			//catch all - error in value read
-			else
-			{
-				printf("ERROR SHOULD NOT HAVE ENTERED HERE");
-			}
-
-			//shift values right by two to check next two bits
-			forwardcheck = forwardcheck >> 2;
-			backwardcheck = backwardcheck >> 2;
-			mask = mask >> 2;
-		}
-	}
 }
 
 /* Thread handler*/
@@ -142,7 +266,7 @@ void *MQTT_thread(void *MQTT_package){
 
 		/* Wait on signal */
 		sem_getvalue(package->MQTT_mutex, &semVal);
-		printf("semVal = %d\n", semVal); 
+		printf("semVal = %d\n", semVal);
 		sem_wait(package->MQTT_mutex);
 
 		/* CHANGE LATER */

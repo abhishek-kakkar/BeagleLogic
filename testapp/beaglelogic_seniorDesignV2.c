@@ -29,10 +29,12 @@
 int bfd, i;
 
 /* Globals to Keep Track Of */
-int countforward = 0;
-int countbackward = 0;
-int counterror = 0;
-int pub_signal = 0; 
+int pub_signal = 0;
+uint32_t countforward = 0;
+uint32_t countbackward = 0;
+uint32_t counterror = 0;
+uint32_t risingEdgeCounts[10]={0};
+uint32_t channelTimes[10]={0};
 
 uint8_t *buf,*bl_mem;
 
@@ -80,7 +82,7 @@ void segfaulthandler(int x)
 void timer_handler(int signum) {
 
 	/* Set Flag */
-	pub_signal = 1; 
+	pub_signal = 1;
 }
 
 int main(int argc, char **argv)
@@ -170,7 +172,7 @@ int main(int argc, char **argv)
 	/* Spawn MQTT thread */
 	package_t.bfd_cpy = bfd;
 	package_t.pollfd = pollfd;
-	package_t.MQTT_mutex = &MQTT_mutex; 
+	package_t.MQTT_mutex = &MQTT_mutex;
 	if (start_MQTT_t(&package_t, MQTT_t)) {
 		return 1;
 	}
@@ -232,7 +234,7 @@ int main(int argc, char **argv)
 #endif
 		cnt += cnt1;
 	}
-	
+
 	clock_gettime(CLOCK_MONOTONIC, &t2);
 
 	printf("Read %d bytes in %jd us, speed=%jd MB/s\n",

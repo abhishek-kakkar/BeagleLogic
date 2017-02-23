@@ -12,11 +12,23 @@
 int i;
 
 //counters to keep track of how many times forward and backward has been seen
-extern int countforward;
-extern int countbackward;
-extern int counterror;
 extern int pub_signal;
+extern uint32_t countforward;
+extern uint32_t countbackward;
+extern uint32_t counterror;
+extern uint32_t risingEdgeCounts[10]={0};
+extern uint32_t channelTimes[10]={0};
+
 extern sem_t MQTT_mutex;
+
+typdef enum state {INIT, LL, LH, HL, HH};
+
+typedef struct{
+  int LH;
+  int HL;
+  int HH;
+}stateData;
+
 typedef struct {
 
 	struct lfq *ptr_lfq;
@@ -29,19 +41,23 @@ typedef struct {
 	int MQTT_countbackward;
 	int MQTT_counterror;
 	int MQTT_risingEdgeTime[10];
-
-
 } MQTT_Package;
 
 //Bit processing
 int Rand_Int(int a, int b);
 
-//thread functions
-int  start_process_t();
+/* Quadrature State Machine functions */
+void changeState(current1, current2);
+void stateLL(int temp);
+void stateLH(int temp);
+void StateHL(int temp);
+void StateHH(int temp);
+void StateINIT(int temp, state previous);
+
+/* MQTT functions */
 int  start_MQTT_t();
-void *process_thread(void *ptr_package);
 void *MQTT_thread(void *ptr_package);
 void MQTT_queueData(void *MQTT_package);
-void quadrature_counter(int buffer1, int buffer2);
+
 
 #endif /* SENIORDESIGNLIB_H_ */
