@@ -92,7 +92,6 @@ int main(int argc, char **argv)
 
 	/*buffer for read*/
 	char buffer[4 * 1000 * 1000];
-	char past[2];
 	struct timespec t1, t2, t3, t4;
 	struct pollfd pollfd;
 	struct sigaction sa;

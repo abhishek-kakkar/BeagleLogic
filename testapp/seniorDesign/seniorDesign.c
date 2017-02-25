@@ -24,17 +24,17 @@
 /* MQTT defined values */
 #define ADDRESS		"tcp://localhost:1883"
 #define CLIENTID	"FMCFlow"
-#define TOPIC		"MQTTTest"
-#define QOS			1
+#define TOPIC		  "MQTTTest"
+#define QOS			  1
 #define TIMEOUT		10000L
 
-state presentState[5]={INIT};
-state previousState=INIT;//for use with stateINIT only
+State presentState[5]={INIT};
+State previousState=INIT;//for use with stateINIT only
 u32int risingEdgeCounts[10]={0};
 u32int channelTimes[10]={0};
 
 /* Quadrature state machine */
-void changeState(current1,current2){
+void changeState(int current1, int current2){
   int read = current1;
   int temp = 0x00; //clear temp every run
   int mask = dataHH;
@@ -192,7 +192,7 @@ void stateHH(int temp){
   }
 }
 
-void stateINIT(int temp, state previous){
+void stateINIT(int temp, State previous){
 
   switch(temp){
     case stateData.LH:
