@@ -21,7 +21,8 @@ extern uint32_t channelTimes[10];
 
 extern sem_t MQTT_mutex;
 
-typdef enum state {INIT, LL, LH, HL, HH} State;
+enum State {INIT, LL, LH, HL, HH};
+typedef enum State State;
 
 typedef struct{
   int LH;
