@@ -20,6 +20,7 @@
 #define dataLH 0b01000000
 #define dataHL 0b10000000
 #define dataHH 0b11000000
+#define dataLL 0
 
 /* MQTT defined values */
 #define ADDRESS		"tcp://localhost:1883"
@@ -30,29 +31,35 @@
 
 State presentState[5]={INIT};
 State previousState=INIT;//for use with stateINIT only
-u32int risingEdgeCounts[10]={0};
-u32int channelTimes[10]={0};
+uint32_t risingEdgeCounts[10]={0};
+uint32_t channelTimes[10]={0};
 
 /* Quadrature state machine */
 void changeState(int current1, int current2){
   int read = current1;
-  int temp = 0x00; //clear temp every run
+  int temp = 0x00;
   int mask = dataHH;
+
   stateData.LH = dataLH;
   stateData.HL = dataHL;
   stateData.HH = dataHH;
+  stateData.LL = dataLL;
 
   for(i=0; i<5; i++){
 
     if(i==4){
+
+      /* reset for the 2nd byte */
       stateData.LH = dataLH;
       stateData.HL = dataHL;
       stateData.HH = dataHH;
       mask = dataHH;
       read = current2;
+
     }
 
-    temp = read & mask; //access bits step 1
+    /* access bits step 1 */
+    temp = read & mask;
 
     switch(presentState[i]){
       case LL:
@@ -62,7 +69,7 @@ void changeState(int current1, int current2){
         stateLH(temp);
         break;
       case HL:
-        stateHL(temp)
+        stateHL(temp);
         break;
       case HH:
         stateHH(temp);
@@ -72,6 +79,7 @@ void changeState(int current1, int current2){
         break;
     }
 
+    /* shift all bytes to look at next bit pair */
     stateData.LH = stateData.LH >>2;
     stateData.HL = stateData.HL >>2;
     stateData.HH = stateData.HH >>2;
@@ -83,18 +91,22 @@ void changeState(int current1, int current2){
 void stateLL(int temp){
 
   switch(temp){
+
     case stateData.LH:
       risingEdgeCounts[i*2+1]++;
       countbackward++;
       presentState[i] = LH;
       break;
+
     case stateData.HL:
       risingEdgeCounts[i*2]++;
       countforward++;
       presentState[i] = HL;
       break;
-    case 0:
+
+    case stateData.LL:
       break;
+
     case stateData.HH:
       risingEdgeCounts[i*2]++;
       risingEdgeCounts[i*2+1]++;
@@ -102,6 +114,7 @@ void stateLL(int temp){
       presentState[i] = INIT;
       previousState = LL;
       break;
+
     default:
       printf("Error\n");
       presentState[i] = INIT;
@@ -115,21 +128,25 @@ void stateLH(int temp){
   switch(temp){
     case stateData.LH:
       break;
+
     case stateData.HL:
       risingEdgeCounts[i*2]++;
       counterror++;
       presentState[i] = INIT;
       previousState = LH;
       break;
-    case 0:
+
+    case stateData.LL:
       countforward++;
       presentState[i] = LL;
       break;
+
     case stateData.HH:
       risingEdgeCounts[i*2]++;
       countbackward++;
       presentState[i] = HH;
       break;
+
     default:
       printf("Error\n");
       presentState[i] = INIT;
@@ -141,23 +158,28 @@ void stateLH(int temp){
 void stateHL(int temp){
 
   switch(temp){
+
     case stateData.LH:
       risingEdgeCounts[i*2+1]++;
       counterror++;
       presentState[i] = INIT;
       previousState = HL;
       break;
+
     case stateData.HL:
       break;
-    case 0:
+
+    case stateData.LL:
       countbackward++;
       presentState[i] = LL;
       break;
+
     case stateData.HH:
       risingEdgeCounts[i*2+1]++;
       countforward++;
       presentState[i] = HH;
       break;
+
     default:
       printf("Error\n");
       presentState[i] = INIT;
@@ -169,21 +191,26 @@ void stateHL(int temp){
 void stateHH(int temp){
 
   switch(temp){
+
     case stateData.LH:
       countforward++;
       presentState[i] = LH;
       break;
+
     case stateData.HL:
       countbackward++;
       presentState[i] = HL;
       break;
-    case 0:
+
+    case stateData.LL:
       counterror++;
       presentState[i] = INIT;
       previousState = HH;
       break;
+
     case stateData.HH:
       break;
+
     default:
       printf("Error\n");
       presentState[i] = INIT;
@@ -195,19 +222,23 @@ void stateHH(int temp){
 void stateINIT(int temp, State previous){
 
   switch(temp){
+
     case stateData.LH:
       if(previous == LL || previous == HL)
         risingEdgeCounts[i*2+1]++;
       presentState[i] = LH;
       break;
+
     case stateData.HL:
       if(previous == LL || previous == LH)
         risingEdgeCounts[i*2]++;
       presentState[i] = HL;
       break;
+
     case 0:
       presentState[i] = LL;
       break;
+
     case stateData.HH:
       if(previousState == HL || previousState == LL){
         risingEdgeCounts[i*2+1]++;
@@ -217,6 +248,7 @@ void stateINIT(int temp, State previous){
       }
       presentState[i] = HH;
       break;
+
     default:
       printf("Error\n");
       presentState[i] = INIT;

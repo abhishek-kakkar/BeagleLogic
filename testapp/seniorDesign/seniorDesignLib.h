@@ -28,7 +28,8 @@ typedef struct{
   int LH;
   int HL;
   int HH;
-}stateData;
+  int LL;
+} stateData;
 
 typedef struct {
 
@@ -51,9 +52,9 @@ int Rand_Int(int a, int b);
 void changeState(int current1, int current2);
 void stateLL(int temp);
 void stateLH(int temp);
-void StateHL(int temp);
-void StateHH(int temp);
-void StateINIT(int temp, State previous);
+void stateHL(int temp);
+void stateHH(int temp);
+void stateINIT(int temp, State previous);
 
 /* MQTT functions */
 int  start_MQTT_t();
