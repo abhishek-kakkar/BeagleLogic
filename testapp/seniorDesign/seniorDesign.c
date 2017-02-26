@@ -4,6 +4,7 @@
  *  Created on: Feb 2, 2017
  *      Author: Michael
  */
+ 
 #include <stdlib.h>
 #include <stdio.h>
 #include <pthread.h>
@@ -91,166 +92,123 @@ void changeState(int current1, int current2){
 /* state functions */
 void stateLL(int temp){
 
-  switch(temp){
-
-    case data.LH:
-      risingEdgeCounts[i*2+1]++;
-      countbackward++;
-      presentState[i] = LH;
-      break;
-
-    case data.HL:
-      risingEdgeCounts[i*2]++;
-      countforward++;
-      presentState[i] = HL;
-      break;
-
-    case data.LL:
-      break;
-
-    case data.HH:
-      risingEdgeCounts[i*2]++;
-      risingEdgeCounts[i*2+1]++;
-      counterror++;
-      presentState[i] = INIT;
-      previousState = LL;
-      break;
-
-    default:
-      printf("Error\n");
-      presentState[i] = INIT;
-      previousState = LL;
-      break;
+  if(temp == data.LH){
+    risingEdgeCounts[i*2+1]++;
+    countbackward++;
+    presentState[i] = LH;
+  }
+  else if(temp == data.HL){
+    risingEdgeCounts[i*2]++;
+    countforward++;
+    presentState[i] = HL;
+  }
+  else if( temp == data.HH){
+    risingEdgeCounts[i*2]++;
+    risingEdgeCounts[i*2+1]++;
+    counterror++;
+    presentState[i] = INIT;
+    previousState = LL;
+  }
+  else if(temp != data.LL){
+    printf("Error\n");
+    presentState[i] = INIT;
+    previousState = LL;
   }
 }
 
 void stateLH(int temp){
 
-  switch(temp){
-    case data.LH:
-      break;
-
-    case data.HL:
+    else if(temp == data.HL){
       risingEdgeCounts[i*2]++;
       counterror++;
       presentState[i] = INIT;
       previousState = LH;
-      break;
-
-    case data.LL:
+    }
+    else if(temp == data.LL){
       countforward++;
       presentState[i] = LL;
-      break;
-
-    case data.HH:
+    }
+    else if(temp == data.HH){
       risingEdgeCounts[i*2]++;
       countbackward++;
       presentState[i] = HH;
-      break;
-
-    default:
+    }
+    else if(temp != data.LH){
       printf("Error\n");
       presentState[i] = INIT;
       previousState = LH;
       break;
-  }
+    }
 }
 
 void stateHL(int temp){
 
-  switch(temp){
-
-    case data.LH:
+    if(temp == data.LH){
       risingEdgeCounts[i*2+1]++;
       counterror++;
       presentState[i] = INIT;
       previousState = HL;
-      break;
-
-    case data.HL:
-      break;
-
-    case data.LL:
+    }
+    else if(temp == data.LL){
       countbackward++;
       presentState[i] = LL;
-      break;
-
-    case data.HH:
+    }
+    else if(temp == data.HH){
       risingEdgeCounts[i*2+1]++;
       countforward++;
       presentState[i] = HH;
-      break;
-
-    default:
+    }
+    else if(temp != data.HL){
       printf("Error\n");
       presentState[i] = INIT;
       previousState = HL;
       break;
-  }
+    }
 }
 
 void stateHH(int temp){
 
-  switch(temp){
-
-    case data.LH:
+    if(temp == data.LH){
       countforward++;
       presentState[i] = LH;
-      break;
-
-    case data.HL:
+    }
+    else if(temp == data.HL){
       countbackward++;
       presentState[i] = HL;
-      break;
-
-    case data.LL:
+    }
+    else if(temp == data.LL){
       counterror++;
       presentState[i] = INIT;
       previousState = HH;
-      break;
-
-    case data.HH:
-      break;
-
-    default:
+    }
+    else if(temp != data.HH){
       printf("Error\n");
       presentState[i] = INIT;
       previousState = HH;
-      break;
-  }
+    }
 }
 
 void stateINIT(int temp, State previous){
 
-  switch(temp){
-
-    case data.LH:
-      if(previous == LL || previous == HL)
-        risingEdgeCounts[i*2+1]++;
+    if(temp == data.LH && (previous == LL || previous == HL)){
+      risingEdgeCounts[i*2+1]++;
       presentState[i] = LH;
-      break;
-
-    case data.HL:
-      if(previous == LL || previous == LH)
-        risingEdgeCounts[i*2]++;
+    }
+    else if(temp == data.HL && (previous == LL || previous == LH)){
+      risingEdgeCounts[i*2]++;
       presentState[i] = HL;
-      break;
-
-    case 0:
+    }
+    else if(temp == data.LL){
       presentState[i] = LL;
-      break;
-
-    case data.HH:
-      if(previousState == HL || previousState == LL){
+    }
+    else if (temp == data.HH && (previousState == HL || previousState == LL)){
         risingEdgeCounts[i*2+1]++;
-      }
-      if(previousState == LH || previousState == LL){
+    }
+    else if(temp == data.HH && (previousState == LH || previousState == LL)){
         risingEdgeCounts[i*2]++;
-      }
-      presentState[i] = HH;
-      break;
-
-    default:
+        presentState[i] = HH;
+    }
+    else{
       printf("Error\n");
       presentState[i] = INIT;
       previousState = INIT;
