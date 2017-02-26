@@ -33,7 +33,7 @@ State presentState[5]={INIT};
 State previousState=INIT;//for use with stateINIT only
 uint32_t risingEdgeCounts[10]={0};
 uint32_t channelTimes[10]={0};
-stateData = data;
+stateData data;
 
 /* Quadrature state machine */
 void changeState(int current1, int current2){
