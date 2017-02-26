@@ -32,8 +32,6 @@
 
 State presentState[5]={INIT};
 State previousState=INIT;//for use with stateINIT only
-uint32_t risingEdgeCounts[10]={0};
-uint32_t channelTimes[10]={0};
 stateData data;
 
 /* Quadrature state machine */
@@ -118,7 +116,7 @@ void stateLL(int temp){
 
 void stateLH(int temp){
 
-    else if(temp == data.HL){
+    if(temp == data.HL){
       risingEdgeCounts[i*2]++;
       counterror++;
       presentState[i] = INIT;
@@ -137,7 +135,6 @@ void stateLH(int temp){
       printf("Error\n");
       presentState[i] = INIT;
       previousState = LH;
-      break;
     }
 }
 
@@ -162,7 +159,6 @@ void stateHL(int temp){
       printf("Error\n");
       presentState[i] = INIT;
       previousState = HL;
-      break;
     }
 }
 
@@ -212,7 +208,6 @@ void stateINIT(int temp, State previous){
       printf("Error\n");
       presentState[i] = INIT;
       previousState = INIT;
-      break;
   }
 }
 
