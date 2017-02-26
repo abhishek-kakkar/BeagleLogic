@@ -33,6 +33,7 @@ State presentState[5]={INIT};
 State previousState=INIT;//for use with stateINIT only
 uint32_t risingEdgeCounts[10]={0};
 uint32_t channelTimes[10]={0};
+stateData = data;
 
 /* Quadrature state machine */
 void changeState(int current1, int current2){
@@ -40,19 +41,19 @@ void changeState(int current1, int current2){
   int temp = 0x00;
   int mask = dataHH;
 
-  stateData.LH = dataLH;
-  stateData.HL = dataHL;
-  stateData.HH = dataHH;
-  stateData.LL = dataLL;
+  data.LH = dataLH;
+  data.HL = dataHL;
+  data.HH = dataHH;
+  data.LL = dataLL;
 
   for(i=0; i<5; i++){
 
     if(i==4){
 
       /* reset for the 2nd byte */
-      stateData.LH = dataLH;
-      stateData.HL = dataHL;
-      stateData.HH = dataHH;
+      data.LH = dataLH;
+      data.HL = dataHL;
+      data.HH = dataHH;
       mask = dataHH;
       read = current2;
 
@@ -80,9 +81,9 @@ void changeState(int current1, int current2){
     }
 
     /* shift all bytes to look at next bit pair */
-    stateData.LH = stateData.LH >>2;
-    stateData.HL = stateData.HL >>2;
-    stateData.HH = stateData.HH >>2;
+    data.LH = data.LH >>2;
+    data.HL = data.HL >>2;
+    data.HH = data.HH >>2;
     mask = mask >> 2;
   }
 }
@@ -92,22 +93,22 @@ void stateLL(int temp){
 
   switch(temp){
 
-    case stateData.LH:
+    case data.LH:
       risingEdgeCounts[i*2+1]++;
       countbackward++;
       presentState[i] = LH;
       break;
 
-    case stateData.HL:
+    case data.HL:
       risingEdgeCounts[i*2]++;
       countforward++;
       presentState[i] = HL;
       break;
 
-    case stateData.LL:
+    case data.LL:
       break;
 
-    case stateData.HH:
+    case data.HH:
       risingEdgeCounts[i*2]++;
       risingEdgeCounts[i*2+1]++;
       counterror++;
@@ -126,22 +127,22 @@ void stateLL(int temp){
 void stateLH(int temp){
 
   switch(temp){
-    case stateData.LH:
+    case data.LH:
       break;
 
-    case stateData.HL:
+    case data.HL:
       risingEdgeCounts[i*2]++;
       counterror++;
       presentState[i] = INIT;
       previousState = LH;
       break;
 
-    case stateData.LL:
+    case data.LL:
       countforward++;
       presentState[i] = LL;
       break;
 
-    case stateData.HH:
+    case data.HH:
       risingEdgeCounts[i*2]++;
       countbackward++;
       presentState[i] = HH;
@@ -159,22 +160,22 @@ void stateHL(int temp){
 
   switch(temp){
 
-    case stateData.LH:
+    case data.LH:
       risingEdgeCounts[i*2+1]++;
       counterror++;
       presentState[i] = INIT;
       previousState = HL;
       break;
 
-    case stateData.HL:
+    case data.HL:
       break;
 
-    case stateData.LL:
+    case data.LL:
       countbackward++;
       presentState[i] = LL;
       break;
 
-    case stateData.HH:
+    case data.HH:
       risingEdgeCounts[i*2+1]++;
       countforward++;
       presentState[i] = HH;
@@ -192,23 +193,23 @@ void stateHH(int temp){
 
   switch(temp){
 
-    case stateData.LH:
+    case data.LH:
       countforward++;
       presentState[i] = LH;
       break;
 
-    case stateData.HL:
+    case data.HL:
       countbackward++;
       presentState[i] = HL;
       break;
 
-    case stateData.LL:
+    case data.LL:
       counterror++;
       presentState[i] = INIT;
       previousState = HH;
       break;
 
-    case stateData.HH:
+    case data.HH:
       break;
 
     default:
@@ -223,13 +224,13 @@ void stateINIT(int temp, State previous){
 
   switch(temp){
 
-    case stateData.LH:
+    case data.LH:
       if(previous == LL || previous == HL)
         risingEdgeCounts[i*2+1]++;
       presentState[i] = LH;
       break;
 
-    case stateData.HL:
+    case data.HL:
       if(previous == LL || previous == LH)
         risingEdgeCounts[i*2]++;
       presentState[i] = HL;
@@ -239,7 +240,7 @@ void stateINIT(int temp, State previous){
       presentState[i] = LL;
       break;
 
-    case stateData.HH:
+    case data.HH:
       if(previousState == HL || previousState == LL){
         risingEdgeCounts[i*2+1]++;
       }
