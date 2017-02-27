@@ -77,10 +77,12 @@ void changeState(int current1, int current2){
       default:
         stateINIT(temp,previousState);
         break;
-    }
+    }\
+    /*
     printf("forward counts %d\n", countforward);
     printf("backward counts %d\n", countbackward);
     printf("error counts %d\n", counterror);
+    */
 
     /* shift all bytes to look at next bit pair */
     data.LH = data.LH >>2;
@@ -88,6 +90,10 @@ void changeState(int current1, int current2){
     data.HH = data.HH >>2;
     mask = mask >> 2;
   }
+  printf("forward counts %d\n", countforward);
+  printf("backward counts %d\n", countbackward);
+  printf("error counts %d\n", counterror);
+
 }
 
 /* state functions */

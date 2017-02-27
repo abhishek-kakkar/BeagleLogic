@@ -146,6 +146,7 @@ int main(int argc, char **argv)
 	package_t.bfd_cpy = bfd;
 	package_t.pollfd = pollfd;
 
+	/*
 	if(start_process_t(&package_t, process_thread)){
 		return 1;
 	}
