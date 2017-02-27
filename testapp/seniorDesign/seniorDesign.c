@@ -4,7 +4,7 @@
  *  Created on: Feb 2, 2017
  *      Author: Michael
  */
- 
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <pthread.h>
@@ -108,7 +108,7 @@ void stateLL(int temp){
     previousState = LL;
   }
   else if(temp != data.LL){
-    printf("Error\n");
+    printf("Error StateLL\n");
     presentState[i] = INIT;
     previousState = LL;
   }
@@ -132,7 +132,7 @@ void stateLH(int temp){
       presentState[i] = HH;
     }
     else if(temp != data.LH){
-      printf("Error\n");
+      printf("Error StateLH\n");
       presentState[i] = INIT;
       previousState = LH;
     }
@@ -156,7 +156,7 @@ void stateHL(int temp){
       presentState[i] = HH;
     }
     else if(temp != data.HL){
-      printf("Error\n");
+      printf("Error StateHL\n");
       presentState[i] = INIT;
       previousState = HL;
     }
@@ -178,7 +178,7 @@ void stateHH(int temp){
       previousState = HH;
     }
     else if(temp != data.HH){
-      printf("Error\n");
+      printf("Error StateHH\n");
       presentState[i] = INIT;
       previousState = HH;
     }
@@ -205,7 +205,7 @@ void stateINIT(int temp, State previous){
         presentState[i] = HH;
     }
     else{
-      printf("Error\n");
+      printf("Error Init\n");
       presentState[i] = INIT;
       previousState = INIT;
   }
