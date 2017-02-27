@@ -78,6 +78,9 @@ void changeState(int current1, int current2){
         stateINIT(temp,previousState);
         break;
     }
+    printf("forward counts %d\n", countforward);
+    printf("backward counts %d\n", countbackward);
+    printf("error counts %d\n", counterror);
 
     /* shift all bytes to look at next bit pair */
     data.LH = data.LH >>2;
@@ -218,7 +221,7 @@ void stateINIT(int temp, state previous){
     else if(temp == data.LL){
 		presentState[i] = LL;
     }
-    else if (temp == data.HH){ 
+    else if (temp == data.HH){
 		presentState[i] = HH;
 		if(previous == HL || previous == LL)
 			risingEdgeCounts[i*2+1]++;
