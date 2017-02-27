@@ -186,7 +186,25 @@ void stateHH(int temp){
 
 void stateINIT(int temp, State previous){
 
-    if(temp == data.LH && (previous == LL || previous == HL)){
+    if(previous == INIT){
+
+        if(temp == data.LH){
+          presentState[i] = LH;
+        }
+        else if(temp == data.HL){
+          presentState[i] = HL;
+        }
+        else if (temp == data.LL){
+          presentState[i] = LL;
+        }
+        else if(temp == data.HH){
+          presentState[i] = HH;
+        }
+        else{
+          printf("Error at start of INIT \n");
+        }
+    }
+    else if(temp == data.LH && (previous == LL || previous == HL)){
       risingEdgeCounts[i*2+1]++;
       presentState[i] = LH;
     }
