@@ -4,7 +4,7 @@
  *  Created on: Feb 2, 2017
  *      Author: Michael
  */
- 
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <pthread.h>
@@ -26,12 +26,12 @@
 /* MQTT defined values */
 #define ADDRESS		"tcp://localhost:1883"
 #define CLIENTID	"FMCFlow"
-#define TOPIC		  "MQTTTest"
-#define QOS			  1
+#define TOPIC		"MQTTTest"
+#define QOS			1
 #define TIMEOUT		10000L
 
-State presentState[5]={INIT};
-State previousState=INIT;//for use with stateINIT only
+state presentState[5]={INIT};
+state previousState=INIT;//for use with stateINIT only
 stateData data;
 
 /* Quadrature state machine */
@@ -108,7 +108,7 @@ void stateLL(int temp){
     previousState = LL;
   }
   else if(temp != data.LL){
-    printf("Error\n");
+    printf("Error StateLL\n");
     presentState[i] = INIT;
     previousState = LL;
   }
@@ -132,7 +132,7 @@ void stateLH(int temp){
       presentState[i] = HH;
     }
     else if(temp != data.LH){
-      printf("Error\n");
+      printf("Error StateLH\n");
       presentState[i] = INIT;
       previousState = LH;
     }
@@ -156,7 +156,7 @@ void stateHL(int temp){
       presentState[i] = HH;
     }
     else if(temp != data.HL){
-      printf("Error\n");
+      printf("Error StateHL\n");
       presentState[i] = INIT;
       previousState = HL;
     }
@@ -178,36 +178,57 @@ void stateHH(int temp){
       previousState = HH;
     }
     else if(temp != data.HH){
-      printf("Error\n");
+      printf("Error StateHH\n");
       presentState[i] = INIT;
       previousState = HH;
     }
 }
 
-void stateINIT(int temp, State previous){
+void stateINIT(int temp, state previous){
 
-    if(temp == data.LH && (previous == LL || previous == HL)){
-      risingEdgeCounts[i*2+1]++;
-      presentState[i] = LH;
+	printf("previous state = %d\n", previous);
+    if(previous == INIT){
+
+        if(temp == data.LH){
+          presentState[i] = LH;
+        }
+        else if(temp == data.HL){
+          presentState[i] = HL;
+        }
+        else if (temp == data.LL){
+          presentState[i] = LL;
+        }
+        else if(temp == data.HH){
+          presentState[i] = HH;
+        }
+        else{
+          printf("Error at start of INIT \n");
+        }
     }
-    else if(temp == data.HL && (previous == LL || previous == LH)){
-      risingEdgeCounts[i*2]++;
-      presentState[i] = HL;
+    else if(temp == data.LH){
+		presentState[i] = LH;
+		if(previous == LL || previous == HL)
+			risingEdgeCounts[i*2+1]++;
+    }
+    else if(temp == data.HL){
+		presentState[i] = HL;
+		if(previous == LL || previous == LH)
+			risingEdgeCounts[i*2]++;
     }
     else if(temp == data.LL){
-      presentState[i] = LL;
+		presentState[i] = LL;
     }
-    else if (temp == data.HH && (previousState == HL || previousState == LL)){
-        risingEdgeCounts[i*2+1]++;
-    }
-    else if(temp == data.HH && (previousState == LH || previousState == LL)){
-        risingEdgeCounts[i*2]++;
-        presentState[i] = HH;
+    else if (temp == data.HH){ 
+		presentState[i] = HH;
+		if(previous == HL || previous == LL)
+			risingEdgeCounts[i*2+1]++;
+		else if(previous == LH || previous == LL)
+			risingEdgeCounts[i*2]++;
     }
     else{
-      printf("Error\n");
-      presentState[i] = INIT;
-      previousState = INIT;
+		printf("Error Init\n");
+		presentState[i] = INIT;
+		previous = INIT;
   }
 }
 
