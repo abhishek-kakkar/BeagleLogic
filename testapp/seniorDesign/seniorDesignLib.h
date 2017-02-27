@@ -16,18 +16,20 @@ extern int pub_signal;
 extern uint32_t countforward;
 extern uint32_t countbackward;
 extern uint32_t counterror;
-extern uint32_t risingEdgeCounts[10]={0};
-extern uint32_t channelTimes[10]={0};
+extern uint32_t risingEdgeCounts[10];
+extern uint32_t channelTimes[10];
 
 extern sem_t MQTT_mutex;
 
-typdef enum state {INIT, LL, LH, HL, HH};
+enum State {INIT, LL, LH, HL, HH};
+typedef enum State State;
 
 typedef struct{
   int LH;
   int HL;
   int HH;
-}stateData;
+  int LL;
+} stateData;
 
 typedef struct {
 
@@ -47,12 +49,12 @@ typedef struct {
 int Rand_Int(int a, int b);
 
 /* Quadrature State Machine functions */
-void changeState(current1, current2);
+void changeState(int current1, int current2);
 void stateLL(int temp);
 void stateLH(int temp);
-void StateHL(int temp);
-void StateHH(int temp);
-void StateINIT(int temp, state previous);
+void stateHL(int temp);
+void stateHH(int temp);
+void stateINIT(int temp, State previous);
 
 /* MQTT functions */
 int  start_MQTT_t();
