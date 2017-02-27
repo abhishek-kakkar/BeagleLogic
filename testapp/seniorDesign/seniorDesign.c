@@ -186,6 +186,7 @@ void stateHH(int temp){
 
 void stateINIT(int temp, state previous){
 
+	printf("previous state = %d\n", previous);
     if(previous == INIT){
 
         if(temp == data.LH){
