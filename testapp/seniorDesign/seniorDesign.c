@@ -215,17 +215,17 @@ void stateINIT(int temp, state previous){
     else if(temp == data.LL){
       presentState[i] = LL;
     }
-    else if (temp == data.HH && (previousState == HL || previousState == LL)){
+    else if (temp == data.HH && (previous == HL || previous == LL)){
         risingEdgeCounts[i*2+1]++;
     }
-    else if(temp == data.HH && (previousState == LH || previousState == LL)){
+    else if(temp == data.HH && (previous == LH || previous == LL)){
         risingEdgeCounts[i*2]++;
         presentState[i] = HH;
     }
     else{
       printf("Error Init\n");
       presentState[i] = INIT;
-      previousState = INIT;
+      previous = INIT;
   }
 }
 

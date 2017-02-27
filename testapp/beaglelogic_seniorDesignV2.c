@@ -205,7 +205,7 @@ int main(int argc, char **argv)
 				}
 				/* check to see if we need to transmit */
 				if (pub_signal){
-					MQTT_queueData(&package_t);
+					//MQTT_queueData(&package_t);
 				}
 			}
 
