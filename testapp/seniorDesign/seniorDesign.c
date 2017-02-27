@@ -30,8 +30,8 @@
 #define QOS			  1
 #define TIMEOUT		10000L
 
-State presentState[5]={INIT};
-State previousState=INIT;//for use with stateINIT only
+state presentState[5]={INIT};
+state previousState=INIT;//for use with stateINIT only
 stateData data;
 
 /* Quadrature state machine */
@@ -184,7 +184,7 @@ void stateHH(int temp){
     }
 }
 
-void stateINIT(int temp, State previous){
+void stateINIT(int temp, state previous){
 
     if(previous == INIT){
 

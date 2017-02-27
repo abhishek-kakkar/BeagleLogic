@@ -22,7 +22,7 @@ extern uint32_t channelTimes[10];
 extern sem_t MQTT_mutex;
 
 enum State {INIT, LL, LH, HL, HH};
-typedef enum State State;
+typedef enum State state;
 
 typedef struct{
   int LH;
@@ -54,7 +54,7 @@ void stateLL(int temp);
 void stateLH(int temp);
 void stateHL(int temp);
 void stateHH(int temp);
-void stateINIT(int temp, State previous);
+void stateINIT(int temp, state previous);
 
 /* MQTT functions */
 int  start_MQTT_t();
