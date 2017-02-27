@@ -26,8 +26,8 @@
 /* MQTT defined values */
 #define ADDRESS		"tcp://localhost:1883"
 #define CLIENTID	"FMCFlow"
-#define TOPIC		  "MQTTTest"
-#define QOS			  1
+#define TOPIC		"MQTTTest"
+#define QOS			1
 #define TIMEOUT		10000L
 
 state presentState[5]={INIT};
@@ -205,28 +205,30 @@ void stateINIT(int temp, state previous){
           printf("Error at start of INIT \n");
         }
     }
-    else if(temp == data.LH && (previous == LL || previous == HL)){
-      risingEdgeCounts[i*2+1]++;
-      presentState[i] = LH;
+    else if(temp == data.LH){
+		presentState[i] = LH;
+		if(previous == LL || previous == HL)
+			risingEdgeCounts[i*2+1]++;
     }
-    else if(temp == data.HL && (previous == LL || previous == LH)){
-      risingEdgeCounts[i*2]++;
-      presentState[i] = HL;
+    else if(temp == data.HL){
+		presentState[i] = HL;
+		if(previous == LL || previous == LH)
+			risingEdgeCounts[i*2]++;
     }
     else if(temp == data.LL){
-      presentState[i] = LL;
+		presentState[i] = LL;
     }
-    else if (temp == data.HH && (previous == HL || previous == LL)){
-        risingEdgeCounts[i*2+1]++;
-    }
-    else if(temp == data.HH && (previous == LH || previous == LL)){
-        risingEdgeCounts[i*2]++;
-        presentState[i] = HH;
+    else if (temp == data.HH){ 
+		presentState[i] = HH;
+		if(previous == HL || previous == LL)
+			risingEdgeCounts[i*2+1]++;
+		else if(previous == LH || previous == LL)
+			risingEdgeCounts[i*2]++;
     }
     else{
-      printf("Error Init\n");
-      presentState[i] = INIT;
-      previous = INIT;
+		printf("Error Init\n");
+		presentState[i] = INIT;
+		previous = INIT;
   }
 }
 
