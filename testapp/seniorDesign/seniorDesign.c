@@ -331,7 +331,7 @@ void *MQTT_thread(void *MQTT_package){
         printf("Message with delivery token %d delivered\n", token);
 
         /* Clear PAYLOAD */
-        PAYLOAD = "";
+        memset(PAYLOAD,0,sizeof(PAYLOAD));
       }
 
       sprintf(PAYLOAD, "time = %u, trigger event = %u", package->MQTT_time,
