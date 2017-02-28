@@ -30,11 +30,11 @@ int bfd, i;
 
 /* Globals to Keep Track Of */
 int pub_signal = 0;
-uint32_t countforward = 0;
-uint32_t countbackward = 0;
-uint32_t counterror = 0;
-uint32_t risingEdgeCounts[10]={0};
-uint32_t channelTimes[10]={0};
+uint32_t countforward[5] = 0;
+uint32_t countbackward[5] = 0;
+uint32_t counterror[5] = 0;
+uint32_t risingEdgeCounts[10] = {0};
+uint32_t channelTimes[10] = {0};
 uint32_t clockValue = 0;
 uint32_t event = 9999;
 
