@@ -307,13 +307,13 @@ void *MQTT_thread(void *MQTT_package){
         if(i<5){
 
           sprintf(PAYLOAD, "Counts for Byte Pair %d"
-            "Forward Counts = %d\n"
-            "Backward Counts = %d\n"
-            "Error Counts = %d\n",
+            "Forward Counts = %u\n"
+            "Backward Counts = %u\n"
+            "Error Counts = %u\n",
             i, package->MQTT_countforward[i], package->MQTT_countbackward[i],
             package->MQTT_counterror[i]);
         }
-        sprintf(PAYLOAD, "Rising Edge Counts = %d\n Chanel Times = %d \n",
+        sprintf(PAYLOAD, "Rising Edge Counts = %u\n Chanel Times = %u\n",
           package->MQTT_risingEdgeTime, package->MQTT_channelTimes);
         /* Send message */
         pubmsg.payload = PAYLOAD;
@@ -334,7 +334,7 @@ void *MQTT_thread(void *MQTT_package){
         PAYLOAD = "";
       }
 
-      sprintf(PAYLOAD, "time = %d, trigger event = %d", package->MQTT_time,
+      sprintf(PAYLOAD, "time = %u, trigger event = %u", package->MQTT_time,
         package->MQTT_event);
   }
 
