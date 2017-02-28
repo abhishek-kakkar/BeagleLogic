@@ -201,7 +201,7 @@ void stateINIT(int temp, state previous){
     printf("previous = %d\n", previous);
     if(previous == INIT){
 
-        if(temp == data.LH){3
+        if(temp == data.LH){
           presentState[i] = LH;
         }
         else if(temp == data.HL){
@@ -249,15 +249,16 @@ void stateINIT(int temp, state previous){
 inline void MQTT_queueData(void *MQTT_package) {
 	/* Update semaphore */
 	int semVal;
+  MQTT_Package *package = (MQTT_Package*)MQTT_package;
 
   /* package data */
-  memcpy(MQTT_package->MQTT_countforward, forwardCount, sizeof(forwardCount));
-  memcpy(MQTT_package->MQTT_countbackward, backwardCount, sizeof(backwardCount));
-  memcpy(MQTT_package->MQTT_counterror, errorCount, sizeof(errorCount));
-  memcpy(MQTT_package->MQTT_risingEdgeCounts, risingEdgeCounts, sizeof(risingEdgeCounts));
-  memcpy(MQTT_package->MQTT_channelTimes, channelTimes, sizeof(channelTimes));
-  MQTT_package->MQTT_time = clockValue;
-  MQTT_package->MQTT_time = event;
+  memcpy(package->MQTT_countforward, forwardCount, sizeof(forwardCount));
+  memcpy(package->MQTT_countbackward, backwardCount, sizeof(backwardCount));
+  memcpy(package->MQTT_counterror, errorCount, sizeof(errorCount));
+  memcpy(package->MQTT_risingEdgeCounts, risingEdgeCounts, sizeof(risingEdgeCounts));
+  memcpy(package->MQTT_channelTimes, channelTimes, sizeof(channelTimes));
+  package->MQTT_time = clockValue;
+  package->MQTT_time = event;
 
   /* Signal to publish */
 	sem_getvalue(&MQTT_mutex, &semVal);
@@ -305,14 +306,14 @@ void *MQTT_thread(void *MQTT_package){
         /* need to evaluate this */
         if(i<5){
 
-          sprintf(&PAYLOAD, "Counts for Byte Pair %d"
+          sprintf(PAYLOAD, "Counts for Byte Pair %d"
             "Forward Counts = %d\n"
             "Backward Counts = %d\n"
             "Error Counts = %d\n",
             i, package->MQTT_countforward[i], package->MQTT_countbackward[i],
             package->MQTT_counterror[i]);
         }
-        sprintf(&PAYLOAD, "Rising Edge Counts = %d\n Chanel Times = %d \n",
+        sprintf(PAYLOAD, "Rising Edge Counts = %d\n Chanel Times = %d \n",
           package->MQTT_risingEdgeTime, package->MQTT_channelTimes);
         /* Send message */
         pubmsg.payload = PAYLOAD;
@@ -333,7 +334,7 @@ void *MQTT_thread(void *MQTT_package){
         PAYLOAD = "";
       }
 
-      sprintf(&PAYLOAD, "time = %d, trigger event = %d", package->MQTT_time,
+      sprintf(PAYLOAD, "time = %d, trigger event = %d", package->MQTT_time,
         package->MQTT_event);
   }
 
