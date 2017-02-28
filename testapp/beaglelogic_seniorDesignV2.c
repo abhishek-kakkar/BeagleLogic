@@ -35,6 +35,8 @@ uint32_t countbackward = 0;
 uint32_t counterror = 0;
 uint32_t risingEdgeCounts[10]={0};
 uint32_t channelTimes[10]={0};
+uint32_t time = 0;
+uint32_t event = 9999;
 
 uint8_t *buf,*bl_mem;
 
@@ -43,6 +45,11 @@ sem_t MQTT_mutex;
 
 /* For testing nonblocking IO */
 #define NONBLOCK
+
+/* for prover stroke */
+#define proverStart 0b00100000
+#define proverEnd   0b00010000
+#define proverMask  0b00110000
 
 /* Returns time difference in microseconds */
 static uint64_t timediff(struct timespec *tv1, struct timespec *tv2)
@@ -199,13 +206,22 @@ int main(int argc, char **argv)
 				/*Debug*/
 				//printf("%2x %2x\n", buffer[i], buffer[i + 1]);
 
+				/* incremeant our time */
+				time++;
 				/* Check past with present values */
 				if (buffer[i] != buffer[i-2] || buffer[i + 1] != buffer[i-1]){
 					changeState((int) buffer[i], (int) buffer[i + 1]);
 				}
+
 				/* check to see if we need to transmit */
 				if (pub_signal){
-					//MQTT_queueData(&package_t);
+					MQTT_queueData(&package_t);
+				}
+				else if(buffer[i+1] & proverMask == proverStart){
+					MQTT_queueData(&package_t);
+				}
+				else if(buffer[i] & proverMask == proverEnd){
+					MQTT_queueData(&package_t);
 				}
 			}
 

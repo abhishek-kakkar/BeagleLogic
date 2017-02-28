@@ -26,8 +26,7 @@
 /* MQTT defined values */
 #define ADDRESS		"tcp://localhost:1883"
 #define CLIENTID	"FMCFlow"
-#define TOPIC		"MQTTTest"
-#define QOS			1
+#define QOS			  1
 #define TIMEOUT		10000L
 
 state presentState[5]={INIT};
@@ -186,10 +185,10 @@ void stateHH(int temp){
 
 void stateINIT(int temp, state previous){
 
-	printf("previous state = %d\n", previous);
+    printf("previous = %d\n", previous);
     if(previous == INIT){
 
-        if(temp == data.LH){
+        if(temp == data.LH){3
           presentState[i] = LH;
         }
         else if(temp == data.HL){
@@ -205,30 +204,28 @@ void stateINIT(int temp, state previous){
           printf("Error at start of INIT \n");
         }
     }
-    else if(temp == data.LH){
-		presentState[i] = LH;
-		if(previous == LL || previous == HL)
-			risingEdgeCounts[i*2+1]++;
+    else if(temp == data.LH && (previous == LL || previous == HL)){
+      risingEdgeCounts[i*2+1]++;
+      presentState[i] = LH;
     }
-    else if(temp == data.HL){
-		presentState[i] = HL;
-		if(previous == LL || previous == LH)
-			risingEdgeCounts[i*2]++;
+    else if(temp == data.HL && (previous == LL || previous == LH)){
+      risingEdgeCounts[i*2]++;
+      presentState[i] = HL;
     }
     else if(temp == data.LL){
-		presentState[i] = LL;
+      presentState[i] = LL;
     }
-    else if (temp == data.HH){ 
-		presentState[i] = HH;
-		if(previous == HL || previous == LL)
-			risingEdgeCounts[i*2+1]++;
-		else if(previous == LH || previous == LL)
-			risingEdgeCounts[i*2]++;
+    else if (temp == data.HH && (previous == HL || previous == LL)){
+        risingEdgeCounts[i*2+1]++;
+    }
+    else if(temp == data.HH && (previous == LH || previous == LL)){
+        risingEdgeCounts[i*2]++;
+        presentState[i] = HH;
     }
     else{
-		printf("Error Init\n");
-		presentState[i] = INIT;
-		previous = INIT;
+      printf("Error Init\n");
+      presentState[i] = INIT;
+      previous = INIT;
   }
 }
 
@@ -236,6 +233,7 @@ void stateINIT(int temp, state previous){
 inline void MQTT_queueData(void *MQTT_package) {
 	/* Update semaphore */
 	int semVal;
+  constant char *TOPICS[] = {""};
 	printf("hello handler\n");
 	sem_getvalue(&MQTT_mutex, &semVal);
 	sem_post(&MQTT_mutex);
@@ -276,14 +274,15 @@ void *MQTT_thread(void *MQTT_package){
 		printf("semVal = %d\n", semVal);
 		sem_wait(package->MQTT_mutex);
 
-		/* CHANGE LATER */
-		//PAYLOAD = "HELLO";
+		/* Create Payload to send */
+		PAYLOAD = "sostuff" ;
 
 		/* Send message */
 		pubmsg.payload = PAYLOAD;
 		pubmsg.payloadlen = strlen(PAYLOAD);
 		pubmsg.qos = QOS;
 		pubmsg.retained = 0;
+
 		MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
 		printf("Waiting for up to %d seconds for publication of %s\n"
 			"on topic %s for client with ClientID: %s\n",
