@@ -77,7 +77,9 @@ void changeState(int current1, int current2){
       default:
         stateINIT(temp,previousState);
         break;
-    }\
+    }
+
+    /* Debug */
     /*
     printf("forward counts %d\n", forwardCount[i]);
     printf("backward counts %d\n", backwardCount[i]);
@@ -90,6 +92,8 @@ void changeState(int current1, int current2){
     data.HH = data.HH >>2;
     mask = mask >> 2;
   }
+
+  /* Debug */
   printf("forward counts %d\n", forwardCount[i]);
   printf("backward counts %d\n", backwardCount[i]);
   printf("error counts %d\n", errorCount[i]);
