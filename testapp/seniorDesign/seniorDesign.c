@@ -198,7 +198,7 @@ void stateHH(int temp){
 
 void stateINIT(int temp, state previous){
 
-    printf("previous = %d\n", previous);
+	printf("previous state = %d\n", previous);
     if(previous == INIT){
 
         if(temp == data.LH){
@@ -217,31 +217,30 @@ void stateINIT(int temp, state previous){
           printf("Error at start of INIT \n");
         }
     }
-    else if(temp == data.LH && (previous == LL || previous == HL)){
-      risingEdgeCounts[i*2+1]++;
-      presentState[i] = LH;
+    else if(temp == data.LH){
+		presentState[i] = LH;
+		if(previous == LL || previous == HL)
+			risingEdgeCounts[i*2+1]++;
     }
-    else if(temp == data.HL && (previous == LL || previous == LH)){
-      risingEdgeCounts[i*2]++;
-      presentState[i] = HL;
+    else if(temp == data.HL){
+		presentState[i] = HL;
+		if(previous == LL || previous == LH)
+			risingEdgeCounts[i*2]++;
     }
     else if(temp == data.LL){
-      presentState[i] = LL;
-    }
-    else if (temp == data.HH && (previous == HL || previous == LL)){
-        risingEdgeCounts[i*2+1]++;
+		presentState[i] = LL;
     }
     else if (temp == data.HH){
-		    presentState[i] = HH;
+		presentState[i] = HH;
 		if(previous == HL || previous == LL)
 			risingEdgeCounts[i*2+1]++;
 		else if(previous == LH || previous == LL)
 			risingEdgeCounts[i*2]++;
     }
     else{
-      printf("Error Init\n");
-      presentState[i] = INIT;
-      previous = INIT;
+		printf("Error Init\n");
+		presentState[i] = INIT;
+		previous = INIT;
   }
 }
 
