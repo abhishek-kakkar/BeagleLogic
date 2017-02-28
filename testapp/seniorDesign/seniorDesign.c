@@ -255,7 +255,7 @@ inline void MQTT_queueData(void *MQTT_package) {
   memcpy(package->MQTT_countforward, forwardCount, sizeof(forwardCount));
   memcpy(package->MQTT_countbackward, backwardCount, sizeof(backwardCount));
   memcpy(package->MQTT_counterror, errorCount, sizeof(errorCount));
-  memcpy(package->MQTT_risingEdgeCounts, risingEdgeCounts, sizeof(risingEdgeCounts));
+  memcpy(package->MQTT_risingEdgeTime, risingEdgeCounts, sizeof(risingEdgeCounts));
   memcpy(package->MQTT_channelTimes, channelTimes, sizeof(channelTimes));
   package->MQTT_time = clockValue;
   package->MQTT_time = event;
@@ -314,7 +314,7 @@ void *MQTT_thread(void *MQTT_package){
             pubmsg.payload = &package->MQTT_countbackward[i];
             pubmsg.payloadlen = strlen(PAYLOAD);
             MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
-            pubmsg.payload = &package->MQTT_counterror[i]);
+            pubmsg.payload = &package->MQTT_counterror[i];
             pubmsg.payloadlen = strlen(PAYLOAD);
             MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
         }
