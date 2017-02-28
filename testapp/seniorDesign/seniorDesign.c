@@ -26,9 +26,9 @@
 /* MQTT defined values */
 #define ADDRESS		"tcp://localhost:1883"
 #define CLIENTID	"FMCFlow"
-#define QOS			  1
+#define QOS		1
 #define TIMEOUT		10000L
-#define TOPIC "test"
+#define TOPIC 		"test"
 
 state presentState[5]={INIT};
 state previousState=INIT;//for use with stateINIT only
@@ -94,9 +94,9 @@ void changeState(int current1, int current2){
   }
 
   /* Debug */
-  printf("forward counts %d\n", forwardCount[i]);
-  printf("backward counts %d\n", backwardCount[i]);
-  printf("error counts %d\n", errorCount[i]);
+  //printf("forward counts %d\n", forwardCount[i]);
+  //printf("backward counts %d\n", backwardCount[i]);
+  //printf("error counts %d\n", errorCount[i]);
 
 }
 
@@ -273,7 +273,7 @@ void *MQTT_thread(void *MQTT_package){
 
 	MQTT_Package *package = (MQTT_Package*)MQTT_package;
 	int rc, semVal;
-	char PAYLOAD[100] = "";
+	char PAYLOAD[100] = "hello";
 
 	/* Init MQTT*/
 	MQTTClient client;
@@ -299,14 +299,18 @@ void *MQTT_thread(void *MQTT_package){
   		printf("semVal = %d\n", semVal);
   		sem_wait(package->MQTT_mutex);
 
+      pubmsg.payload = PAYLOAD;
+      pubmsg.payloadlen = strlen(PAYLOAD);
       pubmsg.qos = QOS;
       pubmsg.retained = 0;
-
+      MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
       for(i=0; i<10; i++){
 
     		/* Create Payload to send */
         /* need to evaluate this */
         if(i<5){
+
+		printf("publishing \n");
             pubmsg.payload = &package->MQTT_countforward[i];
             pubmsg.payloadlen = strlen(PAYLOAD);
             MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
