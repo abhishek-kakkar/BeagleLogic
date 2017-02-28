@@ -13,9 +13,9 @@ int i;
 
 //counters to keep track of how many times forward and backward has been seen
 extern int pub_signal;
-extern uint32_t countforward;
-extern uint32_t countbackward;
-extern uint32_t counterror;
+extern uint32_t forwardCount[5];
+extern uint32_t backwardCount[5];
+extern uint32_t errorCount[5];
 extern uint32_t risingEdgeCounts[10];
 extern uint32_t channelTimes[10];
 
@@ -39,9 +39,9 @@ typedef struct {
 	sem_t *MQTT_mutex;
 
 	/* Counters to Publish*/
-	int MQTT_countforward;
-	int MQTT_countbackward;
-	int MQTT_counterror;
+	int MQTT_forwardCount[5];
+	int MQTT_backwardCount[5];
+	int MQTT_errorCount[5];
 	int MQTT_risingEdgeTime[10];
 } MQTT_Package;
 
