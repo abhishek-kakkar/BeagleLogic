@@ -308,20 +308,20 @@ void *MQTT_thread(void *MQTT_package){
     		/* Create Payload to send */
         /* need to evaluate this */
         if(i<5){
-            pubmsg.payload = package->MQTT_countforward[i];
+            pubmsg.payload = &package->MQTT_countforward[i];
             pubmsg.payloadlen = strlen(PAYLOAD);
             MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
-            pubmsg.payload = package->MQTT_countbackward[i];
+            pubmsg.payload = &package->MQTT_countbackward[i];
             pubmsg.payloadlen = strlen(PAYLOAD);
             MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
-            pubmsg.payload = package->MQTT_counterror[i]);
+            pubmsg.payload = &package->MQTT_counterror[i]);
             pubmsg.payloadlen = strlen(PAYLOAD);
             MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
         }
 
-        pubmsg.payload = package->MQTT_risingEdgeTime;
+        pubmsg.payload = &package->MQTT_risingEdgeTime;
         MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
-        pubmsg.payload = package->MQTT_channelTimes;
+        pubmsg.payload = &package->MQTT_channelTimes;
         MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
 
         /* Debug */
