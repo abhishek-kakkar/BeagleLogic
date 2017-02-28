@@ -26,8 +26,7 @@
 /* MQTT defined values */
 #define ADDRESS		"tcp://localhost:1883"
 #define CLIENTID	"FMCFlow"
-#define TOPIC		"MQTTTest"
-#define QOS			1
+#define QOS			  1
 #define TIMEOUT		10000L
 
 state presentState[5]={INIT};
@@ -199,10 +198,10 @@ void stateHH(int temp){
 
 void stateINIT(int temp, state previous){
 
-	printf("previous state = %d\n", previous);
+    printf("previous = %d\n", previous);
     if(previous == INIT){
 
-        if(temp == data.LH){
+        if(temp == data.LH){3
           presentState[i] = LH;
         }
         else if(temp == data.HL){
@@ -218,30 +217,31 @@ void stateINIT(int temp, state previous){
           printf("Error at start of INIT \n");
         }
     }
-    else if(temp == data.LH){
-		presentState[i] = LH;
-		if(previous == LL || previous == HL)
-			risingEdgeCounts[i*2+1]++;
+    else if(temp == data.LH && (previous == LL || previous == HL)){
+      risingEdgeCounts[i*2+1]++;
+      presentState[i] = LH;
     }
-    else if(temp == data.HL){
-		presentState[i] = HL;
-		if(previous == LL || previous == LH)
-			risingEdgeCounts[i*2]++;
+    else if(temp == data.HL && (previous == LL || previous == LH)){
+      risingEdgeCounts[i*2]++;
+      presentState[i] = HL;
     }
     else if(temp == data.LL){
-		presentState[i] = LL;
+      presentState[i] = LL;
+    }
+    else if (temp == data.HH && (previous == HL || previous == LL)){
+        risingEdgeCounts[i*2+1]++;
     }
     else if (temp == data.HH){
-		presentState[i] = HH;
+		    presentState[i] = HH;
 		if(previous == HL || previous == LL)
 			risingEdgeCounts[i*2+1]++;
 		else if(previous == LH || previous == LL)
 			risingEdgeCounts[i*2]++;
     }
     else{
-		printf("Error Init\n");
-		presentState[i] = INIT;
-		previous = INIT;
+      printf("Error Init\n");
+      presentState[i] = INIT;
+      previous = INIT;
   }
 }
 
@@ -249,7 +249,17 @@ void stateINIT(int temp, state previous){
 inline void MQTT_queueData(void *MQTT_package) {
 	/* Update semaphore */
 	int semVal;
-	printf("hello handler\n");
+
+  /* package data */
+  memcpy(MQTT_package->MQTT_countforward, forwardCount, sizeof(forwardCount));
+  memcpy(MQTT_package->MQTT_countbackward, backwardCount, sizeof(backwardCount));
+  memcpy(MQTT_package->MQTT_counterror, errorCount, sizeof(errorCount));
+  memcpy(MQTT_package->MQTT_risingEdgeCounts, risingEdgeCounts, sizeof(risingEdgeCounts));
+  memcpy(MQTT_package->MQTT_channelTimes, channelTimes, sizeof(channelTimes));
+  MQTT_package->MQTT_time = time;
+  MQTT_package->MQTT_time = event;
+
+  /* Signal to publish */
 	sem_getvalue(&MQTT_mutex, &semVal);
 	sem_post(&MQTT_mutex);
 	printf("semVal after post is %d\n", semVal);
@@ -282,29 +292,50 @@ void *MQTT_thread(void *MQTT_package){
 		exit(-1);
 	}
 
-	while(1){
+  while(1){
 
-		/* Wait on signal */
-		sem_getvalue(package->MQTT_mutex, &semVal);
-		printf("semVal = %d\n", semVal);
-		sem_wait(package->MQTT_mutex);
+  		/* Wait on signal */
+  		sem_getvalue(package->MQTT_mutex, &semVal);
+  		printf("semVal = %d\n", semVal);
+  		sem_wait(package->MQTT_mutex);
 
-		/* CHANGE LATER */
-		//PAYLOAD = "HELLO";
+      for(i=0; i<10; i++){
 
-		/* Send message */
-		pubmsg.payload = PAYLOAD;
-		pubmsg.payloadlen = strlen(PAYLOAD);
-		pubmsg.qos = QOS;
-		pubmsg.retained = 0;
-		MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
-		printf("Waiting for up to %d seconds for publication of %s\n"
-			"on topic %s for client with ClientID: %s\n",
-			(int)(TIMEOUT / 1000), PAYLOAD, TOPIC, CLIENTID);
-		rc = MQTTClient_waitForCompletion(client, token, TIMEOUT);
-		printf("Message with delivery token %d delivered\n", token);
+    		/* Create Payload to send */
+        /* need to evaluate this */
+        if(i<5){
 
-	}
+          sprintf(&PAYLOAD, "Counts for Byte Pair %d"
+            "Forward Counts = %d\n"
+            "Backward Counts = %d\n"
+            "Error Counts = %d\n",
+            i, package->MQTT_countforward[i], package->MQTT_countbackward[i],
+            package->MQTT_counterror[i]);
+        }
+        sprintf(&PAYLOAD, "Rising Edge Counts = %d\n Chanel Times = %d \n",
+          package->MQTT_risingEdgeTime, package->MQTT_channelTimes);
+        /* Send message */
+        pubmsg.payload = PAYLOAD;
+        pubmsg.payloadlen = strlen(PAYLOAD);
+        pubmsg.qos = QOS;
+        pubmsg.retained = 0;
+
+        MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
+
+        /* Debug */
+        printf("Waiting for up to %d seconds for publication of %s\n"
+        "on topic %s for client with ClientID: %s\n",
+        (int)(TIMEOUT / 1000), PAYLOAD, TOPIC, CLIENTID);
+        rc = MQTTClient_waitForCompletion(client, token, TIMEOUT);
+        printf("Message with delivery token %d delivered\n", token);
+
+        /* Clear PAYLOAD */
+        PAYLOAD = "";
+      }
+
+      sprintf(&PAYLOAD, "time = %d, trigger event = %d", package->MQTT_time,
+        package->MQTT_event);
+  }
 
 	MQTTClient_disconnect(client, 10000);
 	MQTTClient_destroy(&client);

@@ -18,6 +18,8 @@ extern uint32_t backwardCount[5];
 extern uint32_t errorCount[5];
 extern uint32_t risingEdgeCounts[10];
 extern uint32_t channelTimes[10];
+extern uint32_t time;
+extern uint32_t event;
 
 extern sem_t MQTT_mutex;
 
@@ -33,16 +35,18 @@ typedef struct{
 
 typedef struct {
 
-	struct lfq *ptr_lfq;
 	struct pollfd pollfd;
 	int bfd_cpy;
 	sem_t *MQTT_mutex;
 
 	/* Counters to Publish*/
-	int MQTT_forwardCount[5];
-	int MQTT_backwardCount[5];
-	int MQTT_errorCount[5];
-	int MQTT_risingEdgeTime[10];
+	uint32_t MQTT_countforward[5];
+	uint32_t MQTT_countbackward[5];
+	uint32_t MQTT_counterror[5];
+	uint32_t MQTT_risingEdgeTime[10];
+  uint32_t MQTT_channelTimes[10];
+  uint32_t MQTT_time;
+  uint32_t MQTT_event;
 } MQTT_Package;
 
 //Bit processing
