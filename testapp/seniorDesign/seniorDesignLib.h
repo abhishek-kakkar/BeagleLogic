@@ -18,7 +18,7 @@ extern uint32_t backwardCount[5];
 extern uint32_t errorCount[5];
 extern uint32_t risingEdgeCounts[10];
 extern uint32_t channelTimes[10];
-extern uint32_t time;
+extern uint32_t clockValue;
 extern uint32_t event;
 
 extern sem_t MQTT_mutex;

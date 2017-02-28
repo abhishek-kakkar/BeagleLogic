@@ -256,7 +256,7 @@ inline void MQTT_queueData(void *MQTT_package) {
   memcpy(MQTT_package->MQTT_counterror, errorCount, sizeof(errorCount));
   memcpy(MQTT_package->MQTT_risingEdgeCounts, risingEdgeCounts, sizeof(risingEdgeCounts));
   memcpy(MQTT_package->MQTT_channelTimes, channelTimes, sizeof(channelTimes));
-  MQTT_package->MQTT_time = time;
+  MQTT_package->MQTT_time = clockValue;
   MQTT_package->MQTT_time = event;
 
   /* Signal to publish */
