@@ -28,7 +28,8 @@
 #define CLIENTID	"FMCFlow"
 #define QOS			  1
 #define TIMEOUT		10000L
-#define TOPIC 		"test"
+#define TOPIC "test"
+
 state presentState[5]={INIT};
 state previousState=INIT;//for use with stateINIT only
 stateData data;
@@ -181,7 +182,6 @@ void stateHH(int temp){
       presentState[i] = LH;
     }
     else if(temp == data.HL){
-      backwardCount[i]++;
       presentState[i] = HL;
     }
     else if(temp == data.LL){
@@ -255,7 +255,7 @@ inline void MQTT_queueData(void *MQTT_package) {
   memcpy(package->MQTT_countforward, forwardCount, sizeof(forwardCount));
   memcpy(package->MQTT_countbackward, backwardCount, sizeof(backwardCount));
   memcpy(package->MQTT_counterror, errorCount, sizeof(errorCount));
-  memcpy(package->MQTT_risingEdgeTime, risingEdgeCounts, sizeof(risingEdgeCounts));
+  memcpy(package->MQTT_risingEdgeCounts, risingEdgeCounts, sizeof(risingEdgeCounts));
   memcpy(package->MQTT_channelTimes, channelTimes, sizeof(channelTimes));
   package->MQTT_time = clockValue;
   package->MQTT_time = event;
@@ -308,20 +308,20 @@ void *MQTT_thread(void *MQTT_package){
     		/* Create Payload to send */
         /* need to evaluate this */
         if(i<5){
-            pubmsg.payload = &package->MQTT_countforward[i];
+            pubmsg.payload = package->MQTT_countforward[i];
             pubmsg.payloadlen = strlen(PAYLOAD);
             MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
-            pubmsg.payload = &package->MQTT_countbackward[i];
+            pubmsg.payload = package->MQTT_countbackward[i];
             pubmsg.payloadlen = strlen(PAYLOAD);
             MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
-            pubmsg.payload = &package->MQTT_counterror[i];
+            pubmsg.payload = package->MQTT_counterror[i]);
             pubmsg.payloadlen = strlen(PAYLOAD);
             MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
         }
 
-        pubmsg.payload = &package->MQTT_risingEdgeTime[i];
+        pubmsg.payload = package->MQTT_risingEdgeTime;
         MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
-        pubmsg.payload = &package->MQTT_channelTimes[i];
+        pubmsg.payload = package->MQTT_channelTimes;
         MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
 
         /* Debug */
