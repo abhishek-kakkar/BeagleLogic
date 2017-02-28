@@ -300,27 +300,28 @@ void *MQTT_thread(void *MQTT_package){
   		printf("semVal = %d\n", semVal);
   		sem_wait(package->MQTT_mutex);
 
+      pubmsg.qos = QOS;
+      pubmsg.retained = 0;
+
       for(i=0; i<10; i++){
 
     		/* Create Payload to send */
         /* need to evaluate this */
         if(i<5){
-
-          sprintf(PAYLOAD, "Counts for Byte Pair %d"
-            "Forward Counts = %u\n"
-            "Backward Counts = %u\n"
-            "Error Counts = %u\n",
-            i, package->MQTT_countforward[i], package->MQTT_countbackward[i],
-            package->MQTT_counterror[i]);
+            pubmsg.payload = package->MQTT_countforward[i];
+            pubmsg.payloadlen = strlen(PAYLOAD);
+            MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
+            pubmsg.payload = package->MQTT_countbackward[i];
+            pubmsg.payloadlen = strlen(PAYLOAD);
+            MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
+            pubmsg.payload = package->MQTT_counterror[i]);
+            pubmsg.payloadlen = strlen(PAYLOAD);
+            MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
         }
-        sprintf(PAYLOAD, "Rising Edge Counts = %u\n Chanel Times = %u\n",
-          package->MQTT_risingEdgeTime, package->MQTT_channelTimes);
-        /* Send message */
-        pubmsg.payload = PAYLOAD;
-        pubmsg.payloadlen = strlen(PAYLOAD);
-        pubmsg.qos = QOS;
-        pubmsg.retained = 0;
 
+        pubmsg.payload = package->MQTT_risingEdgeTime;
+        MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
+        pubmsg.payload = package->MQTT_channelTimes;
         MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
 
         /* Debug */
@@ -336,6 +337,8 @@ void *MQTT_thread(void *MQTT_package){
 
       sprintf(PAYLOAD, "time = %u, trigger event = %u", package->MQTT_time,
         package->MQTT_event);
+      pubmsg.payload = PAYLOAD;
+      MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
   }
 
 	MQTTClient_disconnect(client, 10000);
