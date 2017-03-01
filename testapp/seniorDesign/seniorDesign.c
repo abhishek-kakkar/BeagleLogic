@@ -30,6 +30,8 @@
 #define TIMEOUT		10000L
 #define TOPIC 		"test"
 
+int j;
+
 state presentState[5]={INIT};
 state previousState=INIT;//for use with stateINIT only
 stateData data;
@@ -45,9 +47,9 @@ void changeState(int current1, int current2){
   data.HH = dataHH;
   data.LL = dataLL;
 
-  for(i=0; i<5; i++){
+  for(j=0; j<5; j++){
 
-    if(i==4){
+    if(j==4){
 
       /* reset for the 2nd byte */
       data.LH = dataLH;
@@ -61,7 +63,7 @@ void changeState(int current1, int current2){
     /* access bits step 1 */
     temp = read & mask;
 
-    switch(presentState[i]){
+    switch(presentState[j]){
       case LL:
         stateLL(temp);
         break;
@@ -81,9 +83,9 @@ void changeState(int current1, int current2){
 
     /* Debug */
     /*
-    printf("forward counts %d\n", forwardCount[i]);
-    printf("backward counts %d\n", backwardCount[i]);
-    printf("error counts %d\n", errorCount[i]);
+    printf("forward counts %d\n", forwardCount[j]);
+    printf("backward counts %d\n", backwardCount[j]);
+    printf("error counts %d\n", errorCount[j]);
     */
 
     /* shift all bytes to look at next bit pair */
@@ -94,9 +96,9 @@ void changeState(int current1, int current2){
   }
 
   /* Debug */
-  //printf("forward counts %d\n", forwardCount[i]);
-  //printf("backward counts %d\n", backwardCount[i]);
-  //printf("error counts %d\n", errorCount[i]);
+  //printf("forward counts %d\n", forwardCount[j]);
+  //printf("backward counts %d\n", backwardCount[j]);
+  //printf("error counts %d\n", errorCount[j]);
 
 }
 
@@ -104,25 +106,25 @@ void changeState(int current1, int current2){
 void stateLL(int temp){
 
   if(temp == data.LH){
-    risingEdgeCounts[i*2+1]++;
-    backwardCount[i]++;
-    presentState[i] = LH;
+    risingEdgeCounts[j*2+1]++;
+    backwardCount[j]++;
+    presentState[j] = LH;
   }
   else if(temp == data.HL){
-    risingEdgeCounts[i*2]++;
-    forwardCount[i]++;
-    presentState[i] = HL;
+    risingEdgeCounts[j*2]++;
+    forwardCount[j]++;
+    presentState[j] = HL;
   }
   else if( temp == data.HH){
-    risingEdgeCounts[i*2]++;
-    risingEdgeCounts[i*2+1]++;
-    errorCount[i]++;
-    presentState[i] = INIT;
+    risingEdgeCounts[j*2]++;
+    risingEdgeCounts[j*2+1]++;
+    errorCount[j]++;
+    presentState[j] = INIT;
     previousState = LL;
   }
   else if(temp != data.LL){
     printf("Error StateLL\n");
-    presentState[i] = INIT;
+    presentState[j] = INIT;
     previousState = LL;
   }
 }
@@ -130,23 +132,23 @@ void stateLL(int temp){
 void stateLH(int temp){
 
     if(temp == data.HL){
-      risingEdgeCounts[i*2]++;
-      errorCount[i]++;
-      presentState[i] = INIT;
+      risingEdgeCounts[j*2]++;
+      errorCount[j]++;
+      presentState[j] = INIT;
       previousState = LH;
     }
     else if(temp == data.LL){
-      forwardCount[i]++;
-      presentState[i] = LL;
+      forwardCount[j]++;
+      presentState[j] = LL;
     }
     else if(temp == data.HH){
-      risingEdgeCounts[i*2]++;
-      backwardCount[i]++;
-      presentState[i] = HH;
+      risingEdgeCounts[j*2]++;
+      backwardCount[j]++;
+      presentState[j] = HH;
     }
     else if(temp != data.LH){
       printf("Error StateLH\n");
-      presentState[i] = INIT;
+      presentState[j] = INIT;
       previousState = LH;
     }
 }
@@ -154,23 +156,23 @@ void stateLH(int temp){
 void stateHL(int temp){
 
     if(temp == data.LH){
-      risingEdgeCounts[i*2+1]++;
-      errorCount[i]++;
-      presentState[i] = INIT;
+      risingEdgeCounts[j*2+1]++;
+      errorCount[j]++;
+      presentState[j] = INIT;
       previousState = HL;
     }
     else if(temp == data.LL){
-      backwardCount[i]++;
-      presentState[i] = LL;
+      backwardCount[j]++;
+      presentState[j] = LL;
     }
     else if(temp == data.HH){
-      risingEdgeCounts[i*2+1]++;
-      forwardCount[i]++;
-      presentState[i] = HH;
+      risingEdgeCounts[j*2+1]++;
+      forwardCount[j]++;
+      presentState[j] = HH;
     }
     else if(temp != data.HL){
       printf("Error StateHL\n");
-      presentState[i] = INIT;
+      presentState[j] = INIT;
       previousState = HL;
     }
 }
@@ -178,20 +180,20 @@ void stateHL(int temp){
 void stateHH(int temp){
 
     if(temp == data.LH){
-      forwardCount[i]++;
-      presentState[i] = LH;
+      forwardCount[j]++;
+      presentState[j] = LH;
     }
     else if(temp == data.HL){
-      presentState[i] = HL;
+      presentState[j] = HL;
     }
     else if(temp == data.LL){
-      errorCount[i]++;
-      presentState[i] = INIT;
+      errorCount[j]++;
+      presentState[j] = INIT;
       previousState = HH;
     }
     else if(temp != data.HH){
       printf("Error StateHH\n");
-      presentState[i] = INIT;
+      presentState[j] = INIT;
       previousState = HH;
     }
 }
@@ -202,44 +204,44 @@ void stateINIT(int temp, state previous){
     if(previous == INIT){
 
         if(temp == data.LH){
-          presentState[i] = LH;
+          presentState[j] = LH;
         }
         else if(temp == data.HL){
-          presentState[i] = HL;
+          presentState[j] = HL;
         }
         else if (temp == data.LL){
-          presentState[i] = LL;
+          presentState[j] = LL;
         }
         else if(temp == data.HH){
-          presentState[i] = HH;
+          presentState[j] = HH;
         }
         else{
           printf("Error at start of INIT \n");
         }
     }
     else if(temp == data.LH){
-		presentState[i] = LH;
+		presentState[j] = LH;
 		if(previous == LL || previous == HL)
-			risingEdgeCounts[i*2+1]++;
+			risingEdgeCounts[j*2+1]++;
     }
     else if(temp == data.HL){
-		presentState[i] = HL;
+		presentState[j] = HL;
 		if(previous == LL || previous == LH)
-			risingEdgeCounts[i*2]++;
+			risingEdgeCounts[j*2]++;
     }
     else if(temp == data.LL){
-		presentState[i] = LL;
+		presentState[j] = LL;
     }
     else if (temp == data.HH){
-		presentState[i] = HH;
+		presentState[j] = HH;
 		if(previous == HL || previous == LL)
-			risingEdgeCounts[i*2+1]++;
+			risingEdgeCounts[j*2+1]++;
 		else if(previous == LH || previous == LL)
-			risingEdgeCounts[i*2]++;
+			risingEdgeCounts[j*2]++;
     }
     else{
 		printf("Error Init\n");
-		presentState[i] = INIT;
+		presentState[j] = INIT;
 		previous = INIT;
   }
 }
@@ -304,20 +306,20 @@ void *MQTT_thread(void *MQTT_package){
       pubmsg.qos = QOS;
       pubmsg.retained = 0;
       MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
-      for(i=0; i<10; i++){
+      for(j=0; j<10; j++){
 
     		/* Create Payload to send */
         /* need to evaluate this */
-        if(i<5){
+        if(j<5){
 
 		printf("publishing \n");
-            pubmsg.payload = &package->MQTT_countforward[i];
+            pubmsg.payload = &package->MQTT_countforward[j];
             pubmsg.payloadlen = strlen(PAYLOAD);
             MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
-            pubmsg.payload = &package->MQTT_countbackward[i];
+            pubmsg.payload = &package->MQTT_countbackward[j];
             pubmsg.payloadlen = strlen(PAYLOAD);
             MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
-            pubmsg.payload = &package->MQTT_counterror[i];
+            pubmsg.payload = &package->MQTT_counterror[j];
             pubmsg.payloadlen = strlen(PAYLOAD);
             MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
         }
