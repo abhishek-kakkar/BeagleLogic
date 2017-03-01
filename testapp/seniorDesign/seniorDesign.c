@@ -63,6 +63,7 @@ void changeState(int current1, int current2){
     /* access bits step 1 */
     temp = read & mask;
 
+    printf("Present State = %d",presentState[i]);
     switch(presentState[j]){
       case LL:
         stateLL(temp);
@@ -200,7 +201,7 @@ void stateHH(int temp){
 
 void stateINIT(int temp, state previous){
 
-	printf("previous state = %d\n", previous);
+	//printf("previous state = %d\n", previous);
     if(previous == INIT){
 
         if(temp == data.LH){
