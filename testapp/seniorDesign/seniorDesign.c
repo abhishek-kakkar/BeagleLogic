@@ -305,7 +305,7 @@ void *MQTT_thread(void *MQTT_package){
 
       /* Send Hello */
       pubmsg.payload = PAYLOAD;
-      pubmsg.payloadlen = strlen(PAYLOAD);
+      pubmsg.payloadlen = PAYLOADSIZE;
       pubmsg.qos = QOS;
       pubmsg.retained = 0;
       MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
@@ -322,6 +322,8 @@ void *MQTT_thread(void *MQTT_package){
           "Error Counts = %lu\n",
           j, package->MQTT_countforward[j], package->MQTT_countbackward[j],
           package->MQTT_counterror[j]);
+
+          MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
         }
         sprintf(PAYLOAD, "Rising Edge Counts = %lu\n Chanel Times = %lu\n",
           package->MQTT_risingEdgeTime[j], package->MQTT_channelTimes[j]);
