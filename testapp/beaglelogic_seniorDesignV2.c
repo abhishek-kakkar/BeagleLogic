@@ -191,7 +191,7 @@ int main(int argc, char **argv)
 #if defined(NONBLOCK)
 		poll(&pollfd, 1, 500);
 		int i;
-		while (cnt1 < sz_to_read && pollfd.revents) {
+		while (1) {
 
 			/*Start a timer for Debug */
 			//clock_gettime(CLOCK_MONOTONIC, &t3);
@@ -216,7 +216,7 @@ int main(int argc, char **argv)
 				if (pub_signal){
 
 					/* Update event */
-					printf("in here\n");
+					//printf("in here\n");
 					package_t.MQTT_event = 0;
 					MQTT_queueData(&package_t);
 				}

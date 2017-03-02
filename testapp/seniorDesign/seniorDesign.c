@@ -265,7 +265,7 @@ inline void MQTT_queueData(void *MQTT_package) {
   /* Signal to publish */
 	sem_getvalue(&MQTT_mutex, &semVal);
 	sem_post(&MQTT_mutex);
-	printf("semVal after post is %d\n", semVal);
+	//printf("semVal after post is %d\n", semVal);
 
 	/* Set Flag to 0*/
 	pub_signal = 0;
