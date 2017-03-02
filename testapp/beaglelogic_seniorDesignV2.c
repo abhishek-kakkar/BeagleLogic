@@ -205,7 +205,7 @@ int main(int argc, char **argv)
 			for (i = 0; i < 4 * 1000 * 1000; i+=2) {
 
 				/*Debug*/
-				//printf("%2x %2x\n", buffer[i], buffer[i + 1]);
+				printf("%2x %2x\n", buffer[i], buffer[i + 1]);
 
 				/* incremeant our time */
 				clockValue++;
