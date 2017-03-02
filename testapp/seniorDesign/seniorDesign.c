@@ -82,7 +82,7 @@ void changeState(int current1, int current2){
         stateINIT(temp,previousState);
         break;
     }
-    printf("present State after = %d\n", presentState[j]);
+    //printf("present State after = %d\n", presentState[j]);
     /* Debug */
     /*
     printf("forward counts %d\n", forwardCount[j]);
@@ -91,10 +91,10 @@ void changeState(int current1, int current2){
     */
 
     /* shift all bytes to look at next bit pair */
-    printf("LH %d\n", data.LH);
-    printf("HL %d\n", data.HL);
-    printf("HH %d\n", data.HH);
-    printf("LL %d\n", data.LL);
+    //printf("LH %d\n", data.LH);
+    //printf("HL %d\n", data.HL);
+    //printf("HH %d\n", data.HH);
+  //  printf("LL %d\n", data.LL);
     data.LH = data.LH >>2;
     data.HL = data.HL >>2;
     data.HH = data.HH >>2;
