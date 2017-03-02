@@ -313,23 +313,23 @@ void *MQTT_thread(void *MQTT_package){
 
       /* Create Payload to send */
       /* need to evaluate this */
-      for(i=0; i<10; i++){
+      for(j=0; j<10; j++){
 
-        if(i<5){
-          sprintf(PAYLOAD, "Counts for Byte Pair %lu"
+        if(j<5){
+          sprintf(PAYLOAD, "Counts for Byte Pair %lu\n"
           "Forward Counts = %lu\n"
           "Backward Counts = %lu\n"
           "Error Counts = %lu\n",
-          i, package->MQTT_countforward[i], package->MQTT_countbackward[i],
-          package->MQTT_counterror[i]);
+          j, package->MQTT_countforward[j], package->MQTT_countbackward[j],
+          package->MQTT_counterror[j]);
         }
-        sprintf(PAYLOAD, "Rising Edge Counts = %lu\n Chanel Times = %lu\n",
-        package->MQTT_risingEdgeTime, package->MQTT_channelTimes);
+        //sprintf(PAYLOAD, "Rising Edge Counts = %lu\n Chanel Times = %lu\n",
+        //package->MQTT_risingEdgeTime[j], package->MQTT_channelTimes[j]);
       }
 
       /* Add Tigger event */
-      sprintf(PAYLOAD, "time = %lu, trigger event = %lu", package->MQTT_time,
-        package->MQTT_event);
+      //sprintf(PAYLOAD, "time = %lu, trigger event = %lu", package->MQTT_time,
+        //package->MQTT_event);
 
       /* Send message */
       pubmsg.payload = PAYLOAD;
