@@ -339,7 +339,7 @@ void *MQTT_thread(void *MQTT_package){
       }
 
       /* Add Tigger event */
-      sprintf(PAYLOAD, "time = %lu, trigger event = %lu \n-----------------------------------------------------------\" ,
+      sprintf(PAYLOAD, "time = %lu, trigger event = %lu \n-----------------------------------------------------------\n" ,
         package->MQTT_time, package->MQTT_event);
 
       pubmsg.payload = PAYLOAD;
