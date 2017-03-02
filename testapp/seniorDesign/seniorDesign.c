@@ -323,13 +323,15 @@ void *MQTT_thread(void *MQTT_package){
           j, package->MQTT_countforward[j], package->MQTT_countbackward[j],
           package->MQTT_counterror[j]);
         }
-        //sprintf(PAYLOAD, "Rising Edge Counts = %lu\n Chanel Times = %lu\n",
-        //package->MQTT_risingEdgeTime[j], package->MQTT_channelTimes[j]);
+        sprintf(PAYLOAD, "Rising Edge Counts = %lu\n Chanel Times = %lu\n",
+          package->MQTT_risingEdgeTime[j], package->MQTT_channelTimes[j]);
+        MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
       }
 
       /* Add Tigger event */
-      //sprintf(PAYLOAD, "time = %lu, trigger event = %lu", package->MQTT_time,
-        //package->MQTT_event);
+      sprintf(PAYLOAD, "time = %lu, trigger event = %lu", package->MQTT_time,
+        package->MQTT_event);
+      MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
 
       /* Send message */
       pubmsg.payload = PAYLOAD;
