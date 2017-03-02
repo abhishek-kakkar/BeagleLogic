@@ -21,7 +21,7 @@
 #define dataLH 0b01000000
 #define dataHL 0b10000000
 #define dataHH 0b11000000
-#define dataLL 0
+#define dataLL 0b00000000
 
 /* MQTT defined values */
 #define ADDRESS		"tcp://localhost:1883"
@@ -63,7 +63,7 @@ void changeState(int current1, int current2){
     /* access bits step 1 */
     temp = read & mask;
     printf("temp = %2x i = %2x\n",temp,j);
-    printf("Present State = %d \n",presentState[i]);
+    printf("Present State = %d \n",presentState[j]);
     switch(presentState[j]){
       case LL:
         stateLL(temp);
@@ -81,7 +81,7 @@ void changeState(int current1, int current2){
         stateINIT(temp,previousState);
         break;
     }
-    printf("present State after = %d\n", presentState[i]);
+    printf("present State after = %d\n", presentState[j]);
     /* Debug */
     /*
     printf("forward counts %d\n", forwardCount[j]);
@@ -94,6 +94,11 @@ void changeState(int current1, int current2){
     data.HL = data.HL >>2;
     data.HH = data.HH >>2;
     mask = mask >> 2;
+    printf("LH %d\n", data.LH);
+    printf("HL %d\n", data.HL);
+    printf("HH %d\n", data.HH);
+    printf("LL %d\n", data.LL);
+
   }
 
   /* Debug */
@@ -129,7 +134,7 @@ void stateLL(int temp){
     presentState[j] = INIT;
     previousState = LL;
   }
-  else{printf("stuck here");}
+  else{printf("stuck here\n");}
 }
 
 void stateLH(int temp){
