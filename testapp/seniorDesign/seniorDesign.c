@@ -12,7 +12,6 @@
 #include <unistd.h>
 #include <string.h>
 #include "semaphore.h"
-#include "lfq.h"
 #include "MQTTClient.h"
 #include "seniorDesignLib.h"
 #include "../libbeaglelogic.h"
@@ -29,6 +28,7 @@
 #define QOS		1
 #define TIMEOUT		10000L
 #define TOPIC 		"test"
+#define PAYLOADSIZE 10000
 
 int j;
 
@@ -276,7 +276,8 @@ void *MQTT_thread(void *MQTT_package){
 
 	MQTT_Package *package = (MQTT_Package*)MQTT_package;
 	int rc, semVal;
-	char PAYLOAD[100] = "hello";
+	char *PAYLOAD = (char*) malloc(PAYLOADSIZE);
+  strcpy(PAYLOAD,"Hello");
 
 	/* Init MQTT*/
 	MQTTClient client;
@@ -295,66 +296,67 @@ void *MQTT_thread(void *MQTT_package){
 		exit(-1);
 	}
 
-  while(1){
+  while(transmit){
 
   		/* Wait on signal */
   		sem_getvalue(package->MQTT_mutex, &semVal);
   		printf("semVal = %d\n", semVal);
   		sem_wait(package->MQTT_mutex);
 
+      /* Send Hello */
       pubmsg.payload = PAYLOAD;
       pubmsg.payloadlen = strlen(PAYLOAD);
       pubmsg.qos = QOS;
       pubmsg.retained = 0;
       MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
-/*
-      for(j=0; j<10; j++){
+      strcpy(PAYLOAD,"");
 
-    		/* Create Payload to send
-        /* need to evaluate this
-        if(j<5){
+      /* Create Payload to send */
+      /* need to evaluate this */
+      for(i=0; i<10; i++){
 
-		printf("publishing \n");
-            pubmsg.payload = &package->MQTT_countforward[j];
-            pubmsg.payloadlen = strlen(PAYLOAD);
-            MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
-            pubmsg.payload = &package->MQTT_countbackward[j];
-            pubmsg.payloadlen = strlen(PAYLOAD);
-            MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
-            pubmsg.payload = &package->MQTT_counterror[j];
-            pubmsg.payloadlen = strlen(PAYLOAD);
-            MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
+        if(i<5){
+          sprintf(PAYLOAD, "Counts for Byte Pair %lu"
+          "Forward Counts = %lu\n"
+          "Backward Counts = %lu\n"
+          "Error Counts = %lu\n",
+          i, package->MQTT_countforward[i], package->MQTT_countbackward[i],
+          package->MQTT_counterror[i]);
         }
-
-        pubmsg.payload = &package->MQTT_risingEdgeTime;
-        MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
-        pubmsg.payload = &package->MQTT_channelTimes;
-        MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
-
-        /* Debug
-        printf("Waiting for up to %d seconds for publication of %s\n"
-        "on topic %s for client with ClientID: %s\n",
-        (int)(TIMEOUT / 1000), PAYLOAD, TOPIC, CLIENTID);
-        rc = MQTTClient_waitForCompletion(client, token, TIMEOUT);
-        printf("Message with delivery token %d delivered\n", token);
-
-        /* Clear PAYLOAD
-        memset(PAYLOAD,0,sizeof(PAYLOAD));
+        sprintf(PAYLOAD, "Rising Edge Counts = %lu\n Chanel Times = %lu\n",
+        package->MQTT_risingEdgeTime, package->MQTT_channelTimes);
       }
 
-      sprintf(PAYLOAD, "time = %u, trigger event = %u", package->MQTT_time,
+      /* Add Tigger event */
+      sprintf(PAYLOAD, "time = %lu, trigger event = %lu", package->MQTT_time,
         package->MQTT_event);
+
+      /* Send message */
       pubmsg.payload = PAYLOAD;
+      pubmsg.payloadlen = strlen(PAYLOAD);
+      pubmsg.qos = QOS;
+      pubmsg.retained = 0;
+
       MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
-  }
 
-	MQTTClient_disconnect(client, 10000);
-	MQTTClient_destroy(&client);
+      /* Debug */
+      printf("Waiting for up to %d seconds for publication of %s\n"
+      "on topic %s for client with ClientID: %s\n",
+      (int)(TIMEOUT / 1000), PAYLOAD, TOPIC, CLIENTID);
+      rc = MQTTClient_waitForCompletion(client, token, TIMEOUT);
+      printf("Message with delivery token %d delivered\n", token);
 
-	printf("hello from MQTT thread");
-	//return rc;
+      /* Clear PAYLOAD */
+      memset(PAYLOAD,0,sizeof(PAYLOAD));
+     }
+
+   	MQTTClient_disconnect(client, 10000);
+   	MQTTClient_destroy(&client);
+
+   	printf("hello from MQTT thread");
+   	//return rc;
 }
-*/
+
 /* Helper function to start MQTT thread */
 int start_MQTT_t(void *MQTT_package, pthread_t MQTT_t) {
 

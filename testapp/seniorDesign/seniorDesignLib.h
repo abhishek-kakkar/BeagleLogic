@@ -9,10 +9,9 @@
 #ifndef SENIORDESIGNLIB_H_
 #define SENIORDESIGNLIB_H_
 
-int i;
-
+//throw i back in here if you get an error
 //counters to keep track of how many times forward and backward has been seen
-extern int pub_signal;
+extern int pub_signal, transmit;
 extern uint32_t forwardCount[5];
 extern uint32_t backwardCount[5];
 extern uint32_t errorCount[5];

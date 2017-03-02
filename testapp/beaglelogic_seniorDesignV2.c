@@ -30,6 +30,7 @@ int bfd, i;
 
 /* Globals to Keep Track Of */
 int pub_signal = 0;
+int transmit = 1;
 uint32_t forwardCount[5] = {0};
 uint32_t backwardCount[5] = {0};
 uint32_t errorCount[5] = {0};
@@ -37,9 +38,7 @@ uint32_t risingEdgeCounts[10] = {0};
 uint32_t channelTimes[10] = {0};
 uint32_t clockValue = 0;
 uint32_t event = 9999;
-
 uint8_t *buf,*bl_mem;
-
 pthread_t MQTT_t;
 sem_t MQTT_mutex;
 
@@ -87,7 +86,6 @@ void segfaulthandler(int x)
 
 /* Handles itimer */
 void timer_handler(int signum) {
-
 	/* Set Flag */
 	pub_signal = 1;
 }
@@ -99,7 +97,7 @@ int main(int argc, char **argv)
 
 	/*buffer for read*/
 	char buffer[4 * 1000 * 1000];
-	struct timespec t1, t2, t3, t4;
+	struct timespec t1, t2; //t3, t4;
 	struct pollfd pollfd;
 	struct sigaction sa;
 	struct itimerval timer;
@@ -179,7 +177,6 @@ int main(int argc, char **argv)
 	package_t.bfd_cpy = bfd;
 	package_t.pollfd = pollfd;
 	package_t.MQTT_mutex = &MQTT_mutex;
-
 	if (start_MQTT_t(&package_t, MQTT_t)) {
 		return 1;
 	}
