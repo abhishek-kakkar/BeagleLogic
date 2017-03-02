@@ -307,10 +307,11 @@ void *MQTT_thread(void *MQTT_package){
       pubmsg.qos = QOS;
       pubmsg.retained = 0;
       MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
+/*
       for(j=0; j<10; j++){
 
-    		/* Create Payload to send */
-        /* need to evaluate this */
+    		/* Create Payload to send
+        /* need to evaluate this
         if(j<5){
 
 		printf("publishing \n");
@@ -330,14 +331,14 @@ void *MQTT_thread(void *MQTT_package){
         pubmsg.payload = &package->MQTT_channelTimes;
         MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
 
-        /* Debug */
+        /* Debug
         printf("Waiting for up to %d seconds for publication of %s\n"
         "on topic %s for client with ClientID: %s\n",
         (int)(TIMEOUT / 1000), PAYLOAD, TOPIC, CLIENTID);
         rc = MQTTClient_waitForCompletion(client, token, TIMEOUT);
         printf("Message with delivery token %d delivered\n", token);
 
-        /* Clear PAYLOAD */
+        /* Clear PAYLOAD
         memset(PAYLOAD,0,sizeof(PAYLOAD));
       }
 
@@ -353,7 +354,7 @@ void *MQTT_thread(void *MQTT_package){
 	printf("hello from MQTT thread");
 	//return rc;
 }
-
+*/
 /* Helper function to start MQTT thread */
 int start_MQTT_t(void *MQTT_package, pthread_t MQTT_t) {
 
