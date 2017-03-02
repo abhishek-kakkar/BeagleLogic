@@ -180,9 +180,9 @@ int main(int argc, char **argv)
 	package_t.pollfd = pollfd;
 	package_t.MQTT_mutex = &MQTT_mutex;
 
-	if (start_MQTT_t(&package_t, MQTT_t)) {
-		return 1;
-	}
+	//if (start_MQTT_t(&package_t, MQTT_t)) {
+	//	return 1;
+	//}
 
 	clock_gettime(CLOCK_MONOTONIC, &t1);
 	cnt = 0;
@@ -220,19 +220,19 @@ int main(int argc, char **argv)
 
 					/* Update event */
 					package_t.MQTT_event = 0;
-					MQTT_queueData(&package_t);
+					//MQTT_queueData(&package_t);
 				}
 				else if(buffer[i+1] & proverMask == proverStart){
 
 					/* Update event */
 					package_t.MQTT_event = 1;
-					MQTT_queueData(&package_t);
+					//MQTT_queueData(&package_t);
 				}
 				else if(buffer[i] & proverMask == proverEnd){
 
 					/* Update event */
 					package_t.MQTT_event = 2;
-					MQTT_queueData(&package_t);
+					//MQTT_queueData(&package_t);
 				}
 			}
 
