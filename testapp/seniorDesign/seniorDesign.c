@@ -62,7 +62,8 @@ void changeState(int current1, int current2){
 
     /* access bits step 1 */
     temp = read & mask;
-    printf("temp = %2x i = %2x\n",temp,j);
+    printf("mask = %2x \n", mask);
+    printf("temp = %d i = %d\n",temp,j);
     printf("Present State = %d \n",presentState[j]);
     switch(presentState[j]){
       case LL:

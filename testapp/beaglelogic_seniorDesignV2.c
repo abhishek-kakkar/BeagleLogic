@@ -180,9 +180,9 @@ int main(int argc, char **argv)
 	package_t.pollfd = pollfd;
 	package_t.MQTT_mutex = &MQTT_mutex;
 
-	//if (start_MQTT_t(&package_t, MQTT_t)) {
-	//	return 1;
-	//}
+	if (start_MQTT_t(&package_t, MQTT_t)) {
+		return 1;
+	}
 
 	clock_gettime(CLOCK_MONOTONIC, &t1);
 	cnt = 0;
@@ -205,7 +205,7 @@ int main(int argc, char **argv)
 			for (i = 0; i < 4 * 1000 * 1000; i+=2) {
 
 				/*Debug*/
-				printf("%2x %2x\n", buffer[i], buffer[i + 1]);
+				//printf("%2x %2x\n", buffer[i], buffer[i + 1]);
 
 				/* incremeant our time */
 				clockValue++;
@@ -219,20 +219,21 @@ int main(int argc, char **argv)
 				if (pub_signal){
 
 					/* Update event */
+					printf("in here\n");
 					package_t.MQTT_event = 0;
-					//MQTT_queueData(&package_t);
+					MQTT_queueData(&package_t);
 				}
 				else if(buffer[i+1] & proverMask == proverStart){
 
 					/* Update event */
 					package_t.MQTT_event = 1;
-					//MQTT_queueData(&package_t);
+					MQTT_queueData(&package_t);
 				}
 				else if(buffer[i] & proverMask == proverEnd){
 
 					/* Update event */
 					package_t.MQTT_event = 2;
-					//MQTT_queueData(&package_t);
+					MQTT_queueData(&package_t);
 				}
 			}
 
