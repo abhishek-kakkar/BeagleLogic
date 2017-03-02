@@ -260,7 +260,7 @@ inline void MQTT_queueData(void *MQTT_package) {
   memcpy(package->MQTT_risingEdgeTime, risingEdgeCounts, sizeof(risingEdgeCounts));
   memcpy(package->MQTT_channelTimes, channelTimes, sizeof(channelTimes));
   package->MQTT_time = clockValue;
-  package->MQTT_time = event;
+  package->MQTT_event = event;
 
   /* Signal to publish */
 	sem_getvalue(&MQTT_mutex, &semVal);
