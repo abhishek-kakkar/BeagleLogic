@@ -83,18 +83,13 @@ void changeState(int current1, int current2){
         break;
     }
     //printf("present State after = %d\n", presentState[j]);
-    /* Debug */
-    /*
-    printf("forward counts %d\n", forwardCount[j]);
-    printf("backward counts %d\n", backwardCount[j]);
-    printf("error counts %d\n", errorCount[j]);
-    */
 
     /* shift all bytes to look at next bit pair */
+    /* Debug */
     //printf("LH %d\n", data.LH);
     //printf("HL %d\n", data.HL);
     //printf("HH %d\n", data.HH);
-  //  printf("LL %d\n", data.LL);
+    //printf("LL %d\n", data.LL);
     data.LH = data.LH >>2;
     data.HL = data.HL >>2;
     data.HH = data.HH >>2;
@@ -112,7 +107,6 @@ void changeState(int current1, int current2){
 /* state functions */
 void stateLL(int temp){
 
-  //printf("in state LL\n");
   if(temp == data.LH){
     risingEdgeCounts[j*2+1]++;
     backwardCount[j]++;
@@ -135,7 +129,6 @@ void stateLL(int temp){
     presentState[j] = INIT;
     previousState = LL;
   }
-  //else{printf("stuck here\n");}
 }
 
 void stateLH(int temp){
@@ -209,7 +202,6 @@ void stateHH(int temp){
 
 void stateINIT(int temp, state previous){
 
-    //printf("IN INIT\n");
     if(previous == INIT){
 
         if(temp == data.LH){
