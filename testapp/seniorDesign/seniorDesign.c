@@ -90,14 +90,14 @@ void changeState(int current1, int current2){
     */
 
     /* shift all bytes to look at next bit pair */
-    data.LH = data.LH >>2;
-    data.HL = data.HL >>2;
-    data.HH = data.HH >>2;
-    mask = mask >> 2;
     printf("LH %d\n", data.LH);
     printf("HL %d\n", data.HL);
     printf("HH %d\n", data.HH);
     printf("LL %d\n", data.LL);
+    data.LH = data.LH >>2;
+    data.HL = data.HL >>2;
+    data.HH = data.HH >>2;
+    mask = mask >> 2;
 
   }
 
