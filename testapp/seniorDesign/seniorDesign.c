@@ -62,9 +62,9 @@ void changeState(int current1, int current2){
 
     /* access bits step 1 */
     temp = read & mask;
-    printf("mask = %2x \n", mask);
-    printf("temp = %d i = %d\n",temp,j);
-    printf("Present State = %d \n",presentState[j]);
+    //printf("mask = %2x \n", mask);
+    //printf("temp = %d i = %d\n",temp,j);
+    //printf("Present State = %d \n",presentState[j]);
     switch(presentState[j]){
       case LL:
         stateLL(temp);
@@ -112,7 +112,7 @@ void changeState(int current1, int current2){
 /* state functions */
 void stateLL(int temp){
 
-  printf("in state LL\n");
+  //printf("in state LL\n");
   if(temp == data.LH){
     risingEdgeCounts[j*2+1]++;
     backwardCount[j]++;
@@ -135,7 +135,7 @@ void stateLL(int temp){
     presentState[j] = INIT;
     previousState = LL;
   }
-  else{printf("stuck here\n");}
+  //else{printf("stuck here\n");}
 }
 
 void stateLH(int temp){
@@ -209,7 +209,7 @@ void stateHH(int temp){
 
 void stateINIT(int temp, state previous){
 
-    printf("IN INIT\n");
+    //printf("IN INIT\n");
     if(previous == INIT){
 
         if(temp == data.LH){
