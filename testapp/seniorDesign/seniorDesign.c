@@ -305,7 +305,7 @@ void *MQTT_thread(void *MQTT_package){
 
       /* Send Hello */
       pubmsg.payload = PAYLOAD;
-      pubmsg.payloadlen = PAYLOADSIZE;
+      pubmsg.payloadlen = strlen(PAYLOAD);
       pubmsg.qos = QOS;
       pubmsg.retained = 0;
       MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
@@ -316,6 +316,7 @@ void *MQTT_thread(void *MQTT_package){
       for(j=0; j<10; j++){
 
         if(j<5){
+
           sprintf(PAYLOAD, "Counts for Byte Pair %lu\n"
           "Forward Counts = %lu\n"
           "Backward Counts = %lu\n"
@@ -323,24 +324,24 @@ void *MQTT_thread(void *MQTT_package){
           j, package->MQTT_countforward[j], package->MQTT_countbackward[j],
           package->MQTT_counterror[j]);
 
+          pubmsg.payload = PAYLOAD;
+          pubmsg.payloadlen = strlen(PAYLOAD);
           MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
         }
-        sprintf(PAYLOAD, "Rising Edge Counts = %lu\n Chanel Times = %lu\n",
-          package->MQTT_risingEdgeTime[j], package->MQTT_channelTimes[j]);
+        sprintf(PAYLOAD, "channel %d Rising Edge Counts = %lu\n Chanel Times = %lu\n",
+          j,package->MQTT_risingEdgeTime[j], package->MQTT_channelTimes[j]);
+
+          pubmsg.payload = PAYLOAD;
+          pubmsg.payloadlen = strlen(PAYLOAD);
         MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
       }
 
       /* Add Tigger event */
-      sprintf(PAYLOAD, "time = %lu, trigger event = %lu", package->MQTT_time,
-        package->MQTT_event);
-      MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
+      sprintf(PAYLOAD, "time = %lu, trigger event = %lu \n-----------------------------------------------------------\n" ,
+        package->MQTT_time, package->MQTT_event);
 
-      /* Send message */
       pubmsg.payload = PAYLOAD;
       pubmsg.payloadlen = strlen(PAYLOAD);
-      pubmsg.qos = QOS;
-      pubmsg.retained = 0;
-
       MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
 
       /* Debug */
