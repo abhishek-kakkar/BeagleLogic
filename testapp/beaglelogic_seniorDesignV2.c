@@ -97,7 +97,7 @@ int main(int argc, char **argv)
 
 	/*buffer for read*/
 	char buffer[4 * 1000 * 1000];
-	struct timespec t1, t2; //t3, t4;
+	struct timespec t1, t2, t3, t4;
 	struct pollfd pollfd;
 	struct sigaction sa;
 	struct itimerval timer;
@@ -194,7 +194,7 @@ int main(int argc, char **argv)
 		while (1) {
 
 			/*Start a timer for Debug */
-			//clock_gettime(CLOCK_MONOTONIC, &t3);
+			clock_gettime(CLOCK_MONOTONIC, &t3);
 
 			sz = read(bfd, buffer, 4*1000*1000);
 
@@ -235,8 +235,8 @@ int main(int argc, char **argv)
 			}
 
 			/* Debug timer */
-			//clock_gettime(CLOCK_MONOTONIC, &t4);
-			//printf("time for read and process = %jd\n", timediff(&t3,&t4));
+			clock_gettime(CLOCK_MONOTONIC, &t4);
+			printf("time for read and process = %jd\n", timediff(&t3,&t4));
 
 			if (sz == 0)
 				break;

@@ -347,11 +347,13 @@ void *MQTT_thread(void *MQTT_package){
       MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
 
       /* Debug */
+      /*
       printf("Waiting for up to %d seconds for publication of %s\n"
       "on topic %s for client with ClientID: %s\n",
       (int)(TIMEOUT / 1000), PAYLOAD, TOPIC, CLIENTID);
       rc = MQTTClient_waitForCompletion(client, token, TIMEOUT);
       printf("Message with delivery token %d delivered\n", token);
+      */
 
       /* Clear PAYLOAD */
       memset(PAYLOAD,0,sizeof(PAYLOAD));
