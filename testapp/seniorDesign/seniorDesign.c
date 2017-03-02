@@ -265,7 +265,7 @@ inline void MQTT_queueData(void *MQTT_package) {
   /* Signal to publish */
 	sem_getvalue(&MQTT_mutex, &semVal);
 	sem_post(&MQTT_mutex);
-	//printf("semVal after post is %d\n", semVal);
+	printf("semVal after post is %d\n", semVal);
 
 	/* Set Flag to 0*/
 	pub_signal = 0;
@@ -273,6 +273,8 @@ inline void MQTT_queueData(void *MQTT_package) {
 
 /* Thread handler*/
 void *MQTT_thread(void *MQTT_package){
+
+  int y;
 
 	MQTT_Package *package = (MQTT_Package*)MQTT_package;
 	int rc, semVal;
@@ -313,23 +315,23 @@ void *MQTT_thread(void *MQTT_package){
 
       /* Create Payload to send */
       /* need to evaluate this */
-      for(j=0; j<10; j++){
+      for(y=0; y<10; y++){
 
-        if(j<5){
+        if(y<5){
 
           sprintf(PAYLOAD, "Counts for Byte Pair %lu\n"
           "Forward Counts = %lu\n"
           "Backward Counts = %lu\n"
           "Error Counts = %lu\n",
-          j, package->MQTT_countforward[j], package->MQTT_countbackward[j],
-          package->MQTT_counterror[j]);
+          y, package->MQTT_countforward[y], package->MQTT_countbackward[y],
+          package->MQTT_counterror[y]);
 
           pubmsg.payload = PAYLOAD;
           pubmsg.payloadlen = strlen(PAYLOAD);
           MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
         }
         sprintf(PAYLOAD, "channel %d Rising Edge Counts = %lu\n Chanel Times = %lu\n",
-          j,package->MQTT_risingEdgeTime[j], package->MQTT_channelTimes[j]);
+          y,package->MQTT_risingEdgeTime[y], package->MQTT_channelTimes[y]);
 
           pubmsg.payload = PAYLOAD;
           pubmsg.payloadlen = strlen(PAYLOAD);
@@ -337,7 +339,7 @@ void *MQTT_thread(void *MQTT_package){
       }
 
       /* Add Tigger event */
-      sprintf(PAYLOAD, "time = %lu, trigger event = %lu \n-----------------------------------------------------------\n" ,
+      sprintf(PAYLOAD, "time = %lu, trigger event = %lu \n-----------------------------------------------------------\" ,
         package->MQTT_time, package->MQTT_event);
 
       pubmsg.payload = PAYLOAD;
