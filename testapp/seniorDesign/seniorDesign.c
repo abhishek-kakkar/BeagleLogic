@@ -12,7 +12,6 @@
 #include <unistd.h>
 #include <string.h>
 #include "semaphore.h"
-#include "lfq.h"
 #include "MQTTClient.h"
 #include "seniorDesignLib.h"
 #include "../libbeaglelogic.h"
@@ -21,14 +20,17 @@
 #define dataLH 0b01000000
 #define dataHL 0b10000000
 #define dataHH 0b11000000
-#define dataLL 0
+#define dataLL 0b00000000
 
 /* MQTT defined values */
 #define ADDRESS		"tcp://localhost:1883"
 #define CLIENTID	"FMCFlow"
-#define TOPIC		"MQTTTest"
-#define QOS			1
+#define QOS		1
 #define TIMEOUT		10000L
+#define TOPIC 		"test"
+#define PAYLOADSIZE 10000
+
+int j;
 
 state presentState[5]={INIT};
 state previousState=INIT;//for use with stateINIT only
@@ -45,9 +47,9 @@ void changeState(int current1, int current2){
   data.HH = dataHH;
   data.LL = dataLL;
 
-  for(i=0; i<5; i++){
+  for(j=0; j<5; j++){
 
-    if(i==4){
+    if(j==4){
 
       /* reset for the 2nd byte */
       data.LH = dataLH;
@@ -60,8 +62,10 @@ void changeState(int current1, int current2){
 
     /* access bits step 1 */
     temp = read & mask;
-
-    switch(presentState[i]){
+    //printf("mask = %2x \n", mask);
+    //printf("temp = %d i = %d\n",temp,j);
+    //printf("Present State = %d \n",presentState[j]);
+    switch(presentState[j]){
       case LL:
         stateLL(temp);
         break;
@@ -78,38 +82,51 @@ void changeState(int current1, int current2){
         stateINIT(temp,previousState);
         break;
     }
+    //printf("present State after = %d\n", presentState[j]);
 
     /* shift all bytes to look at next bit pair */
+    /* Debug */
+    //printf("LH %d\n", data.LH);
+    //printf("HL %d\n", data.HL);
+    //printf("HH %d\n", data.HH);
+    //printf("LL %d\n", data.LL);
     data.LH = data.LH >>2;
     data.HL = data.HL >>2;
     data.HH = data.HH >>2;
     mask = mask >> 2;
+
   }
+
+  /* Debug */
+  //printf("forward counts %d\n", forwardCount[j]);
+  //printf("backward counts %d\n", backwardCount[j]);
+  //printf("error counts %d\n", errorCount[j]);
+
 }
 
 /* state functions */
 void stateLL(int temp){
 
   if(temp == data.LH){
-    risingEdgeCounts[i*2+1]++;
-    countbackward++;
-    presentState[i] = LH;
+    risingEdgeCounts[j*2+1]++;
+    backwardCount[j]++;
+    presentState[j] = LH;
   }
   else if(temp == data.HL){
-    risingEdgeCounts[i*2]++;
-    countforward++;
-    presentState[i] = HL;
+    risingEdgeCounts[j*2]++;
+    forwardCount[j]++;
+    presentState[j] = HL;
   }
   else if( temp == data.HH){
-    risingEdgeCounts[i*2]++;
-    risingEdgeCounts[i*2+1]++;
-    counterror++;
-    presentState[i] = INIT;
+    risingEdgeCounts[j*2]++;
+    risingEdgeCounts[j*2+1]++;
+    errorCount[j]++;
+    presentState[j] = INIT;
     previousState = LL;
   }
   else if(temp != data.LL){
     printf("Error StateLL\n");
-    presentState[i] = INIT;
+    presentState[j] = INIT;
     previousState = LL;
   }
 }
@@ -117,23 +134,23 @@ void stateLL(int temp){
 void stateLH(int temp){
 
     if(temp == data.HL){
-      risingEdgeCounts[i*2]++;
-      counterror++;
-      presentState[i] = INIT;
+      risingEdgeCounts[j*2]++;
+      errorCount[j]++;
+      presentState[j] = INIT;
       previousState = LH;
     }
     else if(temp == data.LL){
-      countforward++;
-      presentState[i] = LL;
+      forwardCount[j]++;
+      presentState[j] = LL;
     }
     else if(temp == data.HH){
-      risingEdgeCounts[i*2]++;
-      countbackward++;
-      presentState[i] = HH;
+      risingEdgeCounts[j*2]++;
+      backwardCount[j]++;
+      presentState[j] = HH;
     }
     else if(temp != data.LH){
       printf("Error StateLH\n");
-      presentState[i] = INIT;
+      presentState[j] = INIT;
       previousState = LH;
     }
 }
@@ -141,23 +158,23 @@ void stateLH(int temp){
 void stateHL(int temp){
 
     if(temp == data.LH){
-      risingEdgeCounts[i*2+1]++;
-      counterror++;
-      presentState[i] = INIT;
+      risingEdgeCounts[j*2+1]++;
+      errorCount[j]++;
+      presentState[j] = INIT;
       previousState = HL;
     }
     else if(temp == data.LL){
-      countbackward++;
-      presentState[i] = LL;
+      backwardCount[j]++;
+      presentState[j] = LL;
     }
     else if(temp == data.HH){
-      risingEdgeCounts[i*2+1]++;
-      countforward++;
-      presentState[i] = HH;
+      risingEdgeCounts[j*2+1]++;
+      forwardCount[j]++;
+      presentState[j] = HH;
     }
     else if(temp != data.HL){
       printf("Error StateHL\n");
-      presentState[i] = INIT;
+      presentState[j] = INIT;
       previousState = HL;
     }
 }
@@ -165,69 +182,67 @@ void stateHL(int temp){
 void stateHH(int temp){
 
     if(temp == data.LH){
-      countforward++;
-      presentState[i] = LH;
+      forwardCount[j]++;
+      presentState[j] = LH;
     }
     else if(temp == data.HL){
-      countbackward++;
-      presentState[i] = HL;
+      presentState[j] = HL;
     }
     else if(temp == data.LL){
-      counterror++;
-      presentState[i] = INIT;
+      errorCount[j]++;
+      presentState[j] = INIT;
       previousState = HH;
     }
     else if(temp != data.HH){
       printf("Error StateHH\n");
-      presentState[i] = INIT;
+      presentState[j] = INIT;
       previousState = HH;
     }
 }
 
 void stateINIT(int temp, state previous){
 
-	printf("previous state = %d\n", previous);
     if(previous == INIT){
 
         if(temp == data.LH){
-          presentState[i] = LH;
+          presentState[j] = LH;
         }
         else if(temp == data.HL){
-          presentState[i] = HL;
+          presentState[j] = HL;
         }
         else if (temp == data.LL){
-          presentState[i] = LL;
+          presentState[j] = LL;
         }
         else if(temp == data.HH){
-          presentState[i] = HH;
+          presentState[j] = HH;
         }
         else{
           printf("Error at start of INIT \n");
         }
     }
     else if(temp == data.LH){
-		presentState[i] = LH;
+		presentState[j] = LH;
 		if(previous == LL || previous == HL)
-			risingEdgeCounts[i*2+1]++;
+			risingEdgeCounts[j*2+1]++;
     }
     else if(temp == data.HL){
-		presentState[i] = HL;
+		presentState[j] = HL;
 		if(previous == LL || previous == LH)
-			risingEdgeCounts[i*2]++;
+			risingEdgeCounts[j*2]++;
     }
     else if(temp == data.LL){
-		presentState[i] = LL;
+		presentState[j] = LL;
     }
-    else if (temp == data.HH){ 
-		presentState[i] = HH;
+    else if (temp == data.HH){
+		presentState[j] = HH;
 		if(previous == HL || previous == LL)
-			risingEdgeCounts[i*2+1]++;
+			risingEdgeCounts[j*2+1]++;
 		else if(previous == LH || previous == LL)
-			risingEdgeCounts[i*2]++;
+			risingEdgeCounts[j*2]++;
     }
     else{
 		printf("Error Init\n");
-		presentState[i] = INIT;
+		presentState[j] = INIT;
 		previous = INIT;
   }
 }
@@ -236,7 +251,18 @@ void stateINIT(int temp, state previous){
 inline void MQTT_queueData(void *MQTT_package) {
 	/* Update semaphore */
 	int semVal;
-	printf("hello handler\n");
+  MQTT_Package *package = (MQTT_Package*)MQTT_package;
+
+  /* package data */
+  memcpy(package->MQTT_countforward, forwardCount, sizeof(forwardCount));
+  memcpy(package->MQTT_countbackward, backwardCount, sizeof(backwardCount));
+  memcpy(package->MQTT_counterror, errorCount, sizeof(errorCount));
+  memcpy(package->MQTT_risingEdgeTime, risingEdgeCounts, sizeof(risingEdgeCounts));
+  memcpy(package->MQTT_channelTimes, channelTimes, sizeof(channelTimes));
+  package->MQTT_time = clockValue;
+  package->MQTT_event = event;
+
+  /* Signal to publish */
 	sem_getvalue(&MQTT_mutex, &semVal);
 	sem_post(&MQTT_mutex);
 	printf("semVal after post is %d\n", semVal);
@@ -248,9 +274,12 @@ inline void MQTT_queueData(void *MQTT_package) {
 /* Thread handler*/
 void *MQTT_thread(void *MQTT_package){
 
+  int y;
+
 	MQTT_Package *package = (MQTT_Package*)MQTT_package;
 	int rc, semVal;
-	char PAYLOAD[100] = "";
+	char *PAYLOAD = (char*) malloc(PAYLOADSIZE);
+  strcpy(PAYLOAD,"Hello");
 
 	/* Init MQTT*/
 	MQTTClient client;
@@ -269,35 +298,72 @@ void *MQTT_thread(void *MQTT_package){
 		exit(-1);
 	}
 
-	while(1){
+  while(transmit){
 
-		/* Wait on signal */
-		sem_getvalue(package->MQTT_mutex, &semVal);
-		printf("semVal = %d\n", semVal);
-		sem_wait(package->MQTT_mutex);
+  		/* Wait on signal */
+  		sem_getvalue(package->MQTT_mutex, &semVal);
+  		printf("semVal = %d\n", semVal);
+  		sem_wait(package->MQTT_mutex);
 
-		/* CHANGE LATER */
-		//PAYLOAD = "HELLO";
+      /* Send Hello */
+      pubmsg.payload = PAYLOAD;
+      pubmsg.payloadlen = strlen(PAYLOAD);
+      pubmsg.qos = QOS;
+      pubmsg.retained = 0;
+      MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
+      strcpy(PAYLOAD,"");
 
-		/* Send message */
-		pubmsg.payload = PAYLOAD;
-		pubmsg.payloadlen = strlen(PAYLOAD);
-		pubmsg.qos = QOS;
-		pubmsg.retained = 0;
-		MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
-		printf("Waiting for up to %d seconds for publication of %s\n"
-			"on topic %s for client with ClientID: %s\n",
-			(int)(TIMEOUT / 1000), PAYLOAD, TOPIC, CLIENTID);
-		rc = MQTTClient_waitForCompletion(client, token, TIMEOUT);
-		printf("Message with delivery token %d delivered\n", token);
+      /* Create Payload to send */
+      /* need to evaluate this */
+      for(y=0; y<10; y++){
 
-	}
+        if(y<5){
 
-	MQTTClient_disconnect(client, 10000);
-	MQTTClient_destroy(&client);
+          sprintf(PAYLOAD, "Counts for Byte Pair %lu\n"
+          "Forward Counts = %lu\n"
+          "Backward Counts = %lu\n"
+          "Error Counts = %lu\n",
+          y, package->MQTT_countforward[y], package->MQTT_countbackward[y],
+          package->MQTT_counterror[y]);
 
-	printf("hello from MQTT thread");
-	//return rc;
+          pubmsg.payload = PAYLOAD;
+          pubmsg.payloadlen = strlen(PAYLOAD);
+          MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
+        }
+        sprintf(PAYLOAD, "channel %d Rising Edge Counts = %lu\n Chanel Times = %lu\n",
+          y,package->MQTT_risingEdgeTime[y], package->MQTT_channelTimes[y]);
+
+          pubmsg.payload = PAYLOAD;
+          pubmsg.payloadlen = strlen(PAYLOAD);
+        MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
+      }
+
+      /* Add Tigger event */
+      sprintf(PAYLOAD, "time = %lu, trigger event = %lu \n-----------------------------------------------------------\n" ,
+        package->MQTT_time, package->MQTT_event);
+
+      pubmsg.payload = PAYLOAD;
+      pubmsg.payloadlen = strlen(PAYLOAD);
+      MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
+
+      /* Debug */
+      /*
+      printf("Waiting for up to %d seconds for publication of %s\n"
+      "on topic %s for client with ClientID: %s\n",
+      (int)(TIMEOUT / 1000), PAYLOAD, TOPIC, CLIENTID);
+      rc = MQTTClient_waitForCompletion(client, token, TIMEOUT);
+      printf("Message with delivery token %d delivered\n", token);
+      */
+
+      /* Clear PAYLOAD */
+      memset(PAYLOAD,0,sizeof(PAYLOAD));
+     }
+
+   	MQTTClient_disconnect(client, 10000);
+   	MQTTClient_destroy(&client);
+
+   	printf("hello from MQTT thread");
+   	//return rc;
 }
 
 /* Helper function to start MQTT thread */

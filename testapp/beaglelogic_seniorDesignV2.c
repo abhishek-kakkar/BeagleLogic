@@ -30,19 +30,25 @@ int bfd, i;
 
 /* Globals to Keep Track Of */
 int pub_signal = 0;
-uint32_t countforward = 0;
-uint32_t countbackward = 0;
-uint32_t counterror = 0;
-uint32_t risingEdgeCounts[10]={0};
-uint32_t channelTimes[10]={0};
-
+int transmit = 1;
+uint32_t forwardCount[5] = {0};
+uint32_t backwardCount[5] = {0};
+uint32_t errorCount[5] = {0};
+uint32_t risingEdgeCounts[10] = {0};
+uint32_t channelTimes[10] = {0};
+uint32_t clockValue = 0;
+uint32_t event = 9999;
 uint8_t *buf,*bl_mem;
-
 pthread_t MQTT_t;
 sem_t MQTT_mutex;
 
 /* For testing nonblocking IO */
 #define NONBLOCK
+
+/* for prover stroke */
+#define proverStart 0b00100000
+#define proverEnd   0b00010000
+#define proverMask  0b00110000
 
 /* Returns time difference in microseconds */
 static uint64_t timediff(struct timespec *tv1, struct timespec *tv2)
@@ -80,7 +86,6 @@ void segfaulthandler(int x)
 
 /* Handles itimer */
 void timer_handler(int signum) {
-
 	/* Set Flag */
 	pub_signal = 1;
 }
@@ -186,10 +191,10 @@ int main(int argc, char **argv)
 #if defined(NONBLOCK)
 		poll(&pollfd, 1, 500);
 		int i;
-		while (cnt1 < sz_to_read && pollfd.revents) {
+		while (1) {
 
 			/*Start a timer for Debug */
-			//clock_gettime(CLOCK_MONOTONIC, &t3);
+			clock_gettime(CLOCK_MONOTONIC, &t3);
 
 			sz = read(bfd, buffer, 4*1000*1000);
 
@@ -199,19 +204,39 @@ int main(int argc, char **argv)
 				/*Debug*/
 				//printf("%2x %2x\n", buffer[i], buffer[i + 1]);
 
+				/* incremeant our time */
+				clockValue++;
+
 				/* Check past with present values */
 				if (buffer[i] != buffer[i-2] || buffer[i + 1] != buffer[i-1]){
 					changeState((int) buffer[i], (int) buffer[i + 1]);
 				}
-				/* check to see if we need to transmit */
+
+				/* check to see if we need to transmit to MQTT*/
 				if (pub_signal){
-					//MQTT_queueData(&package_t);
+
+					/* Update event */
+					//printf("in here\n");
+					package_t.MQTT_event = 0;
+					MQTT_queueData(&package_t);
+				}
+				else if(buffer[i+1] & proverMask == proverStart){
+
+					/* Update event */
+					package_t.MQTT_event = 1;
+					MQTT_queueData(&package_t);
+				}
+				else if(buffer[i] & proverMask == proverEnd){
+
+					/* Update event */
+					package_t.MQTT_event = 2;
+					MQTT_queueData(&package_t);
 				}
 			}
 
 			/* Debug timer */
-			//clock_gettime(CLOCK_MONOTONIC, &t4);
-			//printf("time for read and process = %jd\n", timediff(&t3,&t4));
+			clock_gettime(CLOCK_MONOTONIC, &t4);
+			printf("time for read and process = %jd\n", timediff(&t3,&t4));
 
 			if (sz == 0)
 				break;

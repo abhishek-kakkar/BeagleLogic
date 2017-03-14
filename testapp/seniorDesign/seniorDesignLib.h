@@ -9,15 +9,16 @@
 #ifndef SENIORDESIGNLIB_H_
 #define SENIORDESIGNLIB_H_
 
-int i;
-
+//throw i back in here if you get an error
 //counters to keep track of how many times forward and backward has been seen
-extern int pub_signal;
-extern uint32_t countforward;
-extern uint32_t countbackward;
-extern uint32_t counterror;
+extern int pub_signal, transmit;
+extern uint32_t forwardCount[5];
+extern uint32_t backwardCount[5];
+extern uint32_t errorCount[5];
 extern uint32_t risingEdgeCounts[10];
 extern uint32_t channelTimes[10];
+extern uint32_t clockValue;
+extern uint32_t event;
 
 extern sem_t MQTT_mutex;
 
@@ -33,16 +34,18 @@ typedef struct{
 
 typedef struct {
 
-	struct lfq *ptr_lfq;
 	struct pollfd pollfd;
 	int bfd_cpy;
 	sem_t *MQTT_mutex;
 
 	/* Counters to Publish*/
-	int MQTT_countforward;
-	int MQTT_countbackward;
-	int MQTT_counterror;
-	int MQTT_risingEdgeTime[10];
+	uint32_t MQTT_countforward[5];
+	uint32_t MQTT_countbackward[5];
+	uint32_t MQTT_counterror[5];
+	uint32_t MQTT_risingEdgeTime[10];
+  uint32_t MQTT_channelTimes[10];
+  uint32_t MQTT_time;
+  uint32_t MQTT_event;
 } MQTT_Package;
 
 //Bit processing
