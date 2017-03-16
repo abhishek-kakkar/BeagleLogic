@@ -35,7 +35,7 @@ uint32_t forwardCount[5] = {0};
 uint32_t backwardCount[5] = {0};
 uint32_t errorCount[5] = {0};
 uint32_t risingEdgeCounts[10] = {0};
-uint32_t channelTimes[10] = {0};
+uint32_t LastRisingEdgeTime[10] = {0};
 uint32_t clockValue = 0;
 uint32_t event = 9999;
 uint8_t *buf,*bl_mem;
@@ -216,20 +216,19 @@ int main(int argc, char **argv)
 				if (pub_signal){
 
 					/* Update event */
-					//printf("in here\n");
-					package_t.MQTT_event = 0;
+					event = 0;
 					MQTT_queueData(&package_t);
 				}
 				else if(buffer[i+1] & proverMask == proverStart){
 
 					/* Update event */
-					package_t.MQTT_event = 1;
+					event = 1;
 					MQTT_queueData(&package_t);
 				}
 				else if(buffer[i] & proverMask == proverEnd){
 
 					/* Update event */
-					package_t.MQTT_event = 2;
+					event = 2;
 					MQTT_queueData(&package_t);
 				}
 			}

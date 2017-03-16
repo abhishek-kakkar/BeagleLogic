@@ -16,7 +16,7 @@ extern uint32_t forwardCount[5];
 extern uint32_t backwardCount[5];
 extern uint32_t errorCount[5];
 extern uint32_t risingEdgeCounts[10];
-extern uint32_t channelTimes[10];
+extern uint32_t LastRisingEdgeTime[10];
 extern uint32_t clockValue;
 extern uint32_t event;
 
@@ -43,7 +43,7 @@ typedef struct {
 	uint32_t MQTT_countbackward[5];
 	uint32_t MQTT_counterror[5];
 	uint32_t MQTT_risingEdgeTime[10];
-  uint32_t MQTT_channelTimes[10];
+  uint32_t MQTT_LastRisingEdgeTime[10];
   uint32_t MQTT_time;
   uint32_t MQTT_event;
 } MQTT_Package;

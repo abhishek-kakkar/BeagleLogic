@@ -62,9 +62,7 @@ void changeState(int current1, int current2){
 
     /* access bits step 1 */
     temp = read & mask;
-    //printf("mask = %2x \n", mask);
-    //printf("temp = %d i = %d\n",temp,j);
-    //printf("Present State = %d \n",presentState[j]);
+
     switch(presentState[j]){
       case LL:
         stateLL(temp);
@@ -82,26 +80,13 @@ void changeState(int current1, int current2){
         stateINIT(temp,previousState);
         break;
     }
-    //printf("present State after = %d\n", presentState[j]);
 
-    /* shift all bytes to look at next bit pair */
-    /* Debug */
-    //printf("LH %d\n", data.LH);
-    //printf("HL %d\n", data.HL);
-    //printf("HH %d\n", data.HH);
-    //printf("LL %d\n", data.LL);
     data.LH = data.LH >>2;
     data.HL = data.HL >>2;
     data.HH = data.HH >>2;
     mask = mask >> 2;
 
   }
-
-  /* Debug */
-  //printf("forward counts %d\n", forwardCount[j]);
-  //printf("backward counts %d\n", backwardCount[j]);
-  //printf("error counts %d\n", errorCount[j]);
-
 }
 
 /* state functions */
@@ -109,17 +94,21 @@ void stateLL(int temp){
 
   if(temp == data.LH){
     risingEdgeCounts[j*2+1]++;
+    LastRisingEdgeTime[j*2+1] = clockValue;
     backwardCount[j]++;
     presentState[j] = LH;
   }
   else if(temp == data.HL){
     risingEdgeCounts[j*2]++;
+    LastRisingEdgeTime[j*2] = clockValue;
     forwardCount[j]++;
     presentState[j] = HL;
   }
   else if( temp == data.HH){
     risingEdgeCounts[j*2]++;
+    LastRisingEdgeTime[j*2] = clockValue;
     risingEdgeCounts[j*2+1]++;
+    LastRisingEdgeTime[j*2+1] = clockValue;
     errorCount[j]++;
     presentState[j] = INIT;
     previousState = LL;
@@ -135,6 +124,7 @@ void stateLH(int temp){
 
     if(temp == data.HL){
       risingEdgeCounts[j*2]++;
+      LastRisingEdgeTime[j*2] = clockValue;
       errorCount[j]++;
       presentState[j] = INIT;
       previousState = LH;
@@ -145,6 +135,7 @@ void stateLH(int temp){
     }
     else if(temp == data.HH){
       risingEdgeCounts[j*2]++;
+      LastRisingEdgeTime[j*2] = clockValue;
       backwardCount[j]++;
       presentState[j] = HH;
     }
@@ -159,6 +150,7 @@ void stateHL(int temp){
 
     if(temp == data.LH){
       risingEdgeCounts[j*2+1]++;
+      LastRisingEdgeTime[j*2+1] = clockValue;
       errorCount[j]++;
       presentState[j] = INIT;
       previousState = HL;
@@ -169,6 +161,7 @@ void stateHL(int temp){
     }
     else if(temp == data.HH){
       risingEdgeCounts[j*2+1]++;
+      LastRisingEdgeTime[j*2+1] = clockValue;
       forwardCount[j]++;
       presentState[j] = HH;
     }
@@ -224,26 +217,32 @@ void stateINIT(int temp, state previous){
 		presentState[j] = LH;
 		if(previous == LL || previous == HL)
 			risingEdgeCounts[j*2+1]++;
+      LastRisingEdgeTime[j*2+1] = clockValue;
     }
     else if(temp == data.HL){
 		presentState[j] = HL;
 		if(previous == LL || previous == LH)
 			risingEdgeCounts[j*2]++;
+      LastRisingEdgeTime[j*2] = clockValue;
     }
     else if(temp == data.LL){
-		presentState[j] = LL;
+		    presentState[j] = LL;
     }
     else if (temp == data.HH){
-		presentState[j] = HH;
-		if(previous == HL || previous == LL)
-			risingEdgeCounts[j*2+1]++;
-		else if(previous == LH || previous == LL)
-			risingEdgeCounts[j*2]++;
+      presentState[j] = HH;
+		  if(previous == HL || previous == LL){
+			     risingEdgeCounts[j*2+1]++;
+           LastRisingEdgeTime[j*2+1] = clockValue;
+      }
+		  else if(previous == LH || previous == LL){
+			     risingEdgeCounts[j*2]++;
+           LastRisingEdgeTime[j*2] = clockValue;
+      }
     }
     else{
-		printf("Error Init\n");
-		presentState[j] = INIT;
-		previous = INIT;
+		    printf("Error Init\n");
+		    presentState[j] = INIT;
+        previous = INIT;
   }
 }
 
@@ -258,7 +257,7 @@ inline void MQTT_queueData(void *MQTT_package) {
   memcpy(package->MQTT_countbackward, backwardCount, sizeof(backwardCount));
   memcpy(package->MQTT_counterror, errorCount, sizeof(errorCount));
   memcpy(package->MQTT_risingEdgeTime, risingEdgeCounts, sizeof(risingEdgeCounts));
-  memcpy(package->MQTT_channelTimes, channelTimes, sizeof(channelTimes));
+  memcpy(package->MQTT_LastRisingEdgeTime, LastRisingEdgeTime, sizeof(LastRisingEdgeTime));
   package->MQTT_time = clockValue;
   package->MQTT_event = event;
 
@@ -314,7 +313,6 @@ void *MQTT_thread(void *MQTT_package){
       strcpy(PAYLOAD,"");
 
       /* Create Payload to send */
-      /* need to evaluate this */
       for(y=0; y<10; y++){
 
         if(y<5){
@@ -331,7 +329,7 @@ void *MQTT_thread(void *MQTT_package){
           MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
         }
         sprintf(PAYLOAD, "channel %d Rising Edge Counts = %lu\n Chanel Times = %lu\n",
-          y,package->MQTT_risingEdgeTime[y], package->MQTT_channelTimes[y]);
+          y,package->MQTT_risingEdgeTime[y], package->MQTT_LastRisingEdgeTime[y]);
 
           pubmsg.payload = PAYLOAD;
           pubmsg.payloadlen = strlen(PAYLOAD);
@@ -345,15 +343,6 @@ void *MQTT_thread(void *MQTT_package){
       pubmsg.payload = PAYLOAD;
       pubmsg.payloadlen = strlen(PAYLOAD);
       MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
-
-      /* Debug */
-      /*
-      printf("Waiting for up to %d seconds for publication of %s\n"
-      "on topic %s for client with ClientID: %s\n",
-      (int)(TIMEOUT / 1000), PAYLOAD, TOPIC, CLIENTID);
-      rc = MQTTClient_waitForCompletion(client, token, TIMEOUT);
-      printf("Message with delivery token %d delivered\n", token);
-      */
 
       /* Clear PAYLOAD */
       memset(PAYLOAD,0,sizeof(PAYLOAD));
@@ -377,6 +366,5 @@ int start_MQTT_t(void *MQTT_package, pthread_t MQTT_t) {
 	}
 	printf("Thread created\n");
 
-//	pthread_join(MQTT_t,NULL);
 	return 0;
 }
