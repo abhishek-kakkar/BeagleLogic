@@ -328,7 +328,7 @@ void *MQTT_thread(void *MQTT_package){
           pubmsg.payloadlen = strlen(PAYLOAD);
           MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
         }
-        sprintf(PAYLOAD, "channel %d Rising Edge Counts = %lu\n Chanel Times = %lu\n",
+        sprintf(PAYLOAD, "channel %d Rising Edge Counts = %lu\n Last Rising Edge Time = %lu\n",
           y,package->MQTT_risingEdgeTime[y], package->MQTT_LastRisingEdgeTime[y]);
 
           pubmsg.payload = PAYLOAD;
