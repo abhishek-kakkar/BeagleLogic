@@ -146,7 +146,7 @@ int main(void)
 		/* Poll for downcalls */
 		if(PINTC_SRSR0 & BIT(SYSEV_ARM_TO_PRU0)) {
 			PINTC_SICR = SYSEV_ARM_TO_PRU0;
-			sc_downcall(handle_downcall);
+			// sc_downcall(handle_downcall);
 		}
 		
 		/* Run triggered */

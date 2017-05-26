@@ -4,8 +4,8 @@
 volatile register unsigned int __R31;
 volatile register unsigned int __R30;
  
-__far volatile char C0[0x300] __attribute__((cregister("C0", far)));	/* PINTC */
-__far volatile char C4[0x100] __attribute__((cregister("C4", near)));	/* PRUCFG */
+__far volatile char C0[0x300];	/* PINTC */
+__far volatile char C4[0x100];	/* PRUCFG */
 
 #define PRUCFG(_reg) \
 	(*(volatile u32 *)((char *)&C4 + (_reg)))
