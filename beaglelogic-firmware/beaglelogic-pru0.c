@@ -18,7 +18,6 @@
 #include <pru_cfg.h>
 #include <pru_intc.h>
 #include <rsc_types.h>
-#include <pru_rpmsg.h>
 
 #include "pru_defs.h"
 #include "resource_table_0.h"
@@ -29,8 +28,6 @@
  */
 #define MAJORVER	0
 #define MINORVER	3
-
-uint8_t payload[RPMSG_BUF_SIZE];
 
 /* Maximum number of SG entries; each entry is 8 bytes */
 #define MAX_BUFLIST_ENTRIES	128
@@ -129,51 +126,14 @@ static uint32_t handle_command(uint32_t cmd) {
 extern void run(struct capture_context *ctx, uint32_t trigger_flags);
 
 int main(void) {
-	struct pru_rpmsg_transport transport;
-	uint16_t src, dst, len;
-	volatile uint8_t *status;
-
 	/* Enable OCP Master Port */
 	CT_CFG.SYSCFG_bit.STANDBY_INIT = 0;
 	cxt.magic = FW_MAGIC;
 
-	/* Clear the status of the PRU-ICSS system event that the ARM
-	 * will use to 'kick' us */
-	CT_INTC.SICR_bit.STS_CLR_IDX = SYSEV_ARM_TO_PRU0;
+	/* Clear all interrupts */
 	CT_INTC.SECR0 = 0xFFFFFFFF;
 
-	/* Make sure the Linux drivers are ready for RPMsg communication */
-	status = &resourceTable.rpmsg_vdev.status;
-	while (!(*status & VIRTIO_CONFIG_S_DRIVER_OK));
-
-	/* Initialize the RPMsg transport structure */
-	pru_rpmsg_init(&transport, &resourceTable.rpmsg_vring0,
-		&resourceTable.rpmsg_vring1,
-		SYSEV_PRU0_TO_ARM, SYSEV_ARM_TO_PRU0);
-
-	while (pru_rpmsg_channel(RPMSG_NS_CREATE, &transport,
-		CHAN_NAME, CHAN_DESC, CHAN_PORT) != PRU_RPMSG_SUCCESS);
-
 	while (1) {
-		if (pru_signal()) {
-			/* Clear the event status */
-			CT_INTC.SICR_bit.STS_CLR_IDX = SYSEV_ARM_TO_PRU0;
-
-			/* Receive all available messages */
-			while (pru_rpmsg_receive(&transport, &src, &dst,
-				payload, &len) == PRU_RPMSG_SUCCESS) {
-				/* Echo the message */
-				pru_rpmsg_send(&transport, dst, src,
-					payload, len);
-
-				if (payload[0] == 'a') {
-					SIGNAL_EVENT(SYSEV_PRU0_TO_ARM_A);
-				} else if (payload[0] == 'b') {
-					SIGNAL_EVENT(SYSEV_PRU0_TO_ARM_B);
-				}
-			}
-		}
-
 		/* Process received command */
 		if (cxt.cmd != 0)
 		{

@@ -6,24 +6,9 @@
 #include <pru_cfg.h>
 #include <pru_ctrl.h>
 #include <pru_intc.h>
-#include <pru_rpmsg.h>
 
 volatile register uint32_t __R31;
 volatile register uint32_t __R30;
-
-/*
- * Using the name 'rpmsg-pru' will probe the rpmsg_pru driver found
- * at linux-x.y.z/drivers/rpmsg/rpmsg_pru.c
- */
-#define CHAN_NAME			"rpmsg-pru"
-#define CHAN_DESC			"Channel 30"
-#define CHAN_PORT			30
-
-/*
- * Used to make sure the Linux drivers are ready for RPMsg communication
- * Found at linux-x.y.z/include/uapi/linux/virtio_config.h
- */
-#define VIRTIO_CONFIG_S_DRIVER_OK	4
 
 #if defined(PRU0) || defined(PRU1)
 
