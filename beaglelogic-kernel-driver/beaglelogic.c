@@ -21,9 +21,11 @@
 #include <linux/poll.h>
 
 #include <linux/platform_device.h>
+#include <linux/pruss.h>
 #include <linux/miscdevice.h>
 
 #include <linux/io.h>
+#include <linux/interrupt.h>
 #include <linux/irqreturn.h>
 #include <linux/slab.h>
 #include <linux/genalloc.h>
@@ -100,6 +102,16 @@ typedef struct databuf {
 struct beaglelogicdev {
 	/* Misc device descriptor */
 	struct miscdevice miscdev;
+
+	/* Handle to pruss structure and PRU0 SRAM */
+	struct pruss *pruss;
+	struct rproc *pru0, *pru1;
+	struct pruss_mem_region pru0sram;
+
+	/* IRQ numbers */
+	int to_bl_irq;
+	int from_bl_irq_1;
+	int from_bl_irq_2;
 
 	/* Imported functions */
 	int (*downcall_idx)(int, u32, u32, u32, u32, u32, u32);
