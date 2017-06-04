@@ -15,7 +15,7 @@
 
 #include <linux/module.h>
 #include <linux/err.h>
-#include <linux/kernel.h> 
+#include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/wait.h>
 #include <linux/poll.h>
@@ -52,13 +52,11 @@ enum bufstates {
 	STATE_BL_BUF_DROPPED
 };
 
-/* PRU Downcall API */
-#define BL_DC_GET_VERSION	0   /* Firmware */
-#define BL_DC_GET_MAX_SG	1   /* Get the Max number of SG entries */
-#define BL_DC_GET_CXT_PTR	2   /* Get the context pointer */
-#define BL_DC_SM_RATE		3   /* Get/set rate = (200 / n) MHz, n = 2... */
-#define BL_DC_SM_TRIGGER	4   /* RFU */
-#define BL_DC_SM_ARM		7   /* Arm the LA (start sampling) */
+/* PRU Commands */
+#define CMD_GET_VERSION 1   /* Firmware version */
+#define CMD_GET_MAX_SG  2   /* Get the max number of bufferlist entries */
+#define CMD_SET_CONFIG  3   /* Get the context pointer */
+#define CMD_START       4   /* Arm the LA (start sampling) */
 
 /* PRU-side sample buffer descriptor */
 typedef struct prusamplebuf {
@@ -68,14 +66,18 @@ typedef struct prusamplebuf {
 
 /* Shared structure containing PRU attributes */
 typedef struct capture_context {
-	/* Firmware context structure magic bytes */
+	/* Magic bytes */
 #define BL_FW_MAGIC	0xBEA61E10
-	u32 magic;
-	u32 errorCode;
+	uint32_t magic;         // Magic bytes, should be 0xBEA61E10
 
-	u32 interrupt1count;
+	uint32_t cmd;           // Command from Linux host to us
+	uint32_t resp;          // Response code
 
-	buflist list_head; /* This is really an array on the PRU side */
+	uint32_t samplediv;     // Sample rate = (100 / samplediv) MHz
+	uint32_t sampleunit;    // 0 = 16-bit, 1 = 8-bit
+	uint32_t triggerflags;  // 0 = one-shot, 1 = continuous sampling
+
+	bufferlist list_head;
 } ccontext;
 
 /* Forward declration */
