@@ -1,6 +1,6 @@
 ;
 ; Assembler Includes for both the PRUs
-; 
+;
 
 	;*
 	;* Constants
@@ -10,7 +10,7 @@
 	.asg C4, CONST_PRUCFG
 	.asg C24, PRUDRAM
 	.asg C31, CONST_DDR
-	
+
 	.asg 0x10, GER_OFFSET
 	.asg 0x24, SICR_OFFSET
 	.asg 0x28, EISR_OFFSET
@@ -20,13 +20,15 @@
 	.asg 0x10000, CONST_SHARED_MEM
 
 	;* IRQ numbers
-	.asg 17, PRU0_PRU1_INTERRUPT
-	.asg 18, PRU1_PRU0_INTERRUPT
-	.asg 19, PRU0_ARM_INTERRUPT
-	.asg 20, PRU1_ARM_INTERRUPT
-	.asg 21, ARM_PRU0_INTERRUPT
-	.asg 22, ARM_PRU1_INTERRUPT
-	
+	.asg 16, PRU0_ARM_INTERRUPT
+	.asg 17, ARM_PRU0_INTERRUPT
+	.asg 18, PRU1_ARM_INTERRUPT
+	.asg 19, ARM_PRU1_INTERRUPT
+	.asg 20, PRU1_PRU0_INTERRUPT
+	.asg 21, PRU0_PRU1_INTERRUPT
+	.asg 22, PRU0_ARM_INTERRUPT_A
+	.asg 24, PRU0_ARM_INTERRUPT_B
+
 	.asg 0x22028, CTPPR_0
 	; Address for the PRUSS_PRU_CTRL registers
 	; CONTROL                 0x22000
