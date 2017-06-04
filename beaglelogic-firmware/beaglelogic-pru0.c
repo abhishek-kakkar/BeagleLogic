@@ -1,7 +1,7 @@
 /*
  * PRU0 Firmware for BeagleLogic
  *
- * Copyright (C) 2014 Kumar Abhishek <abhishek@theembeddedkitchen.net>
+ * Copyright (C) 2014-17 Kumar Abhishek <abhishek@theembeddedkitchen.net>
  *
  * This file is a part of the BeagleLogic project
  *
@@ -13,62 +13,70 @@
 /* We are compiling for PRU0 */
 #define PRU0
 
-#include "pru_syscalls.h"
+#include <stdint.h>
+#include <stdio.h>
+#include <pru_cfg.h>
+#include <pru_intc.h>
+#include <rsc_types.h>
+#include <pru_rpmsg.h>
+
 #include "pru_defs.h"
+#include "resource_table_0.h"
 
 /*
  * Define firmware version
- * This is version 0.2 [v0.1 was the PASM firmware]
+ * This is version 0.3 [v0.2 was firmware for 3.8.13]
  */
 #define MAJORVER	0
-#define MINORVER	2
+#define MINORVER	3
+
+uint8_t payload[RPMSG_BUF_SIZE];
 
 /* Maximum number of SG entries; each entry is 8 bytes */
 #define MAX_BUFLIST_ENTRIES	128
 
-/* Downcall API. To be kept in sync with the kernel driver */
-#define DC_GET_VERSION  0   /* Firmware */
-#define DC_GET_MAX_SG	1   /* Get the Max number of bufferlist entries */
-#define DC_GET_CXT_PTR	2   /* Get the context pointer */
-#define DC_SM_RATE	3   /* Get/set rate = (200 / n) MHz, n = 2... */
-#define DC_SM_TRIGGER	4   /* Write configuration (samplerate/unit) */
-#define DC_SM_ARM	7   /* Arm the LA (start sampling) */
+/* Commands */
+#define CMD_GET_VERSION	1   /* Firmware version */
+#define CMD_GET_MAX_SG	2   /* Get the max number of bufferlist entries */
+#define CMD_SET_CONFIG 	3   /* Get the context pointer */
+#define CMD_START	4   /* Arm the LA (start sampling) */
 
 /* Define magic bytes for the structure. This "looks like" BEAGLELO */
 #define FW_MAGIC	0xBEA61E10
 
-/* Just a basic structure describing the start and end buffer addresses */
+/* Structure describing the start and end buffer addresses */
 typedef struct buflist {
-	u32 dma_start_addr;
-	u32 dma_end_addr;
+	uint32_t dma_start_addr;
+	uint32_t dma_end_addr;
 } bufferlist;
 
-/* Structure describing the context */
+/* Structure describing the core context.
+ * Compiler attributes pin it at 0x0000 */
 struct capture_context {
-	u32 magic;
-	u32 errorCode;
+	uint32_t magic;         // Magic bytes, should be 0xBEA61E10
 
-	u32 interrupt1count;
+	uint32_t cmd;           // Command from Linux host to us
+	uint32_t resp;          // Response code
+
+	uint32_t samplediv;     // Sample rate = (100 / samplediv) MHz
+	uint32_t sampleunit;    // 0 = 16-bit, 1 = 8-bit
+	uint32_t triggerflags;  // 0 = one-shot, 1 = continuous sampling
 
 	bufferlist list[MAX_BUFLIST_ENTRIES];
-} cxt = {0};
+} cxt __attribute__((location(0))) = {0};
 
-u16 state_run = 0;
-short trigger_flags = -1;
-
-extern void sc_downcall(int (*handler)(u32 nr, u32 arg0, u32 arg1, 
-	u32 arg2, u32 arg3, u32 arg4));
+uint16_t state_run = 0;
 
 static inline void resume_other_pru(void) {
-	u32 i;
+	uint32_t i;
 
-	i = (u16)PCTRL_OTHER(0x0000);
-	i |= (((u16)PCTRL_OTHER(0x0004) + 1) << 16) | CONTROL_ENABLE;
+	i = (uint16_t)PCTRL_OTHER(0x0000);
+	i |= (((uint16_t)PCTRL_OTHER(0x0004) + 1) << 16) | CONTROL_ENABLE;
 	i &= ~CONTROL_SOFT_RST_N;
 	PCTRL_OTHER(0x0000) = i;
 }
 
-static inline int wait_other_pru_timeout(u32 timeout) {
+static inline int wait_other_pru_timeout(uint32_t timeout) {
 	do {
 		if ((PCTRL_OTHER(0x0000) & CONTROL_RUNSTATE) == 0)
 			return 0;
@@ -77,23 +85,18 @@ static inline int wait_other_pru_timeout(u32 timeout) {
 }
 
 /* Write the registers of PRU1 (samplerate and sample and enable it */
-int configure_capture(u32 samplerate, u32 sampleunit, u32 triggerflags,
-		u32 reserved0, u32 reserved1) {
-	u32 i;
-
+int configure_capture() {
 	/* Verify if PRU1 is indeed halted and waiting for us */
 	if (wait_other_pru_timeout(200))
 		return -1;
 
 	/* Verify magic bytes */
-	i = pru_other_read_reg(0);
-	if (i != FW_MAGIC)
+	if (pru_other_read_reg(0) != FW_MAGIC)
 		return -1;
 
 	/* All clear, now write the configuration bits */
-	pru_other_write_reg(14, samplerate);
-	pru_other_write_reg(15, sampleunit);
-	trigger_flags = triggerflags;
+	pru_other_write_reg(14, cxt.samplediv);
+	pru_other_write_reg(15, cxt.sampleunit);
 
 	/* Resume over the HALT instruction, give it some time to configure */
 	resume_other_pru();
@@ -105,70 +108,93 @@ int configure_capture(u32 samplerate, u32 sampleunit, u32 triggerflags,
 	return 0;
 }
 
-/* Handle downcalls */
-static int handle_downcall(u32 id, u32 arg0, u32 arg1, u32 arg2,
-		u32 arg3, u32 arg4) {
-	switch (id)
-	{
-		case DC_GET_VERSION:
+static uint32_t handle_command(uint32_t cmd) {
+	switch (cmd) {
+		case CMD_GET_VERSION:
 			return (MINORVER | (MAJORVER << 8));
 
-		case DC_GET_MAX_SG:
+		case CMD_GET_MAX_SG:
 			return MAX_BUFLIST_ENTRIES;
 
-		case DC_GET_CXT_PTR:
-			return (int)&cxt;
+		case CMD_SET_CONFIG:
+			return configure_capture();
 
-		case DC_SM_RATE:
-			return 0;
-
-		case DC_SM_TRIGGER:
-			/* Write configuration bits */
-			return configure_capture(arg0, arg1, arg2, arg3, arg4);
-
-		case DC_SM_ARM:
+		case CMD_START:
 			state_run = 1;
 			return 0;
 	}
-
 	return -1;
 }
 
-extern void run(struct capture_context *ctx, u32 trigger_flags);
+extern void run(struct capture_context *ctx, uint32_t trigger_flags);
 
-int main(void)
-{
+int main(void) {
+	struct pru_rpmsg_transport transport;
+	uint16_t src, dst, len;
+	volatile uint8_t *status;
+
 	/* Enable OCP Master Port */
-	PRUCFG_SYSCFG &= ~SYSCFG_STANDBY_INIT;
+	CT_CFG.SYSCFG_bit.STANDBY_INIT = 0;
 	cxt.magic = FW_MAGIC;
-	while (1) {
 
-		/* Poll for downcalls */
-		if(PINTC_SRSR0 & BIT(SYSEV_ARM_TO_PRU0)) {
-			PINTC_SICR = SYSEV_ARM_TO_PRU0;
-			// sc_downcall(handle_downcall);
+	/* Clear the status of the PRU-ICSS system event that the ARM
+	 * will use to 'kick' us */
+	CT_INTC.SICR_bit.STS_CLR_IDX = SYSEV_ARM_TO_PRU0;
+	CT_INTC.SECR0 = 0xFFFFFFFF;
+
+	/* Make sure the Linux drivers are ready for RPMsg communication */
+	status = &resourceTable.rpmsg_vdev.status;
+	while (!(*status & VIRTIO_CONFIG_S_DRIVER_OK));
+
+	/* Initialize the RPMsg transport structure */
+	pru_rpmsg_init(&transport, &resourceTable.rpmsg_vring0,
+		&resourceTable.rpmsg_vring1,
+		SYSEV_PRU0_TO_ARM, SYSEV_ARM_TO_PRU0);
+
+	while (pru_rpmsg_channel(RPMSG_NS_CREATE, &transport,
+		CHAN_NAME, CHAN_DESC, CHAN_PORT) != PRU_RPMSG_SUCCESS);
+
+	while (1) {
+		if (pru_signal()) {
+			/* Clear the event status */
+			CT_INTC.SICR_bit.STS_CLR_IDX = SYSEV_ARM_TO_PRU0;
+
+			/* Receive all available messages */
+			while (pru_rpmsg_receive(&transport, &src, &dst,
+				payload, &len) == PRU_RPMSG_SUCCESS) {
+				/* Echo the message */
+				pru_rpmsg_send(&transport, dst, src,
+					payload, len);
+
+				if (payload[0] == 'a') {
+					SIGNAL_EVENT(SYSEV_PRU0_TO_ARM_A);
+				} else if (payload[0] == 'b') {
+					SIGNAL_EVENT(SYSEV_PRU0_TO_ARM_B);
+				}
+			}
 		}
-		
+
+		/* Process received command */
+		if (cxt.cmd != 0)
+		{
+			cxt.resp = handle_command(cxt.cmd);
+			cxt.cmd = 0;
+		}
+
 		/* Run triggered */
 		if (state_run == 1) {
 			/* Clear all pending interrupts */
-			PINTC_SECR0 = 0xFFFFFFFF;
+			CT_INTC.SECR0 = 0xFFFFFFFF;
 
 			resume_other_pru();
-			run(&cxt, trigger_flags);
-
-			/* Wait for the previous interrupts to be handled */
-			while (!(PINTC_SRSR0 & BIT(SYSEV_VR_PRU0_TO_ARM)));
-			while ((PINTC_SRSR0 & BIT(SYSEV_VR_PRU0_TO_ARM)));
+			run(&cxt, cxt.triggerflags);
 
 			/* Signal completion */
-			SIGNAL_EVENT(SYSEV_VR_PRU1_TO_ARM);
+			SIGNAL_EVENT(SYSEV_PRU0_TO_ARM_B);
 
 			/* Reset PRU1 and our state */
-			PCTRL_OTHER(0x0000) &= (u16)~CONTROL_SOFT_RST_N;
+			PCTRL_OTHER(0x0000) &= (uint16_t)~CONTROL_SOFT_RST_N;
 			state_run = 0;
-			trigger_flags = -1;
 		}
 	}
 }
-
