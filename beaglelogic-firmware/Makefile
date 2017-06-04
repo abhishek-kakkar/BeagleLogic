@@ -64,7 +64,7 @@ SOURCES=main.c
 
 OBJECTS_PRU0=$(GEN_DIR)/beaglelogic-pru0.object $(GEN_DIR)/beaglelogic-pru0-core.object
 
-OBJECTS_PRU1=$(GEN_DIR)/beaglelogic-pru1-core.object
+OBJECTS_PRU1=$(GEN_DIR)/beaglelogic-pru1.object $(GEN_DIR)/beaglelogic-pru1-core.object
 
 all: printStart $(TARGETS) printEnd
 
