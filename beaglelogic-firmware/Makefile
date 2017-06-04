@@ -129,3 +129,32 @@ clean:
 # Includes the dependencies that the compiler creates (-ppd and -ppa flags)
 -include $(OBJECTS_PRU0:%.object=%.pp)
 -include $(OBJECTS_PRU1:%.object=%.pp)
+
+# Deployment commands
+deploy: deploy-pru1 deploy-pru0
+
+deploycheck:
+# ifneq ($(shell uname -m), armv7l)
+# $(error 'Deploy must be run on the BeagleBone, not on PC')
+# endif
+# ifneq ($(shell id -u), 0)
+# $(error 'Deploy must be run as root.')
+# endif
+
+deploy-pru0: $(TARGET_PRU0) deploycheck
+	@echo 'Installing PRU0 firmware to /lib/firmware'
+	cp $(TARGET_PRU0) /lib/firmware/am335x-pru0-fw
+	sync
+	@echo 'Rebooting PRU0'
+	$(shell echo "4a334000.pru0" > /sys/bus/platform/drivers/pru-rproc/unbind 2> /dev/null)
+	$(shell echo "4a334000.pru0" > /sys/bus/platform/drivers/pru-rproc/bind 2> /dev/null)
+	@echo ''
+
+deploy-pru1: $(TARGET_PRU1) deploycheck
+	@echo 'Installing PRU1 firmware to /lib/firmware'
+	cp $(TARGET_PRU1) /lib/firmware/am335x-pru1-fw
+	sync
+	@echo 'Rebooting PRU1'
+	$(shell echo "4a338000.pru1" > /sys/bus/platform/drivers/pru-rproc/unbind 2> /dev/null)
+	$(shell echo "4a338000.pru1" > /sys/bus/platform/drivers/pru-rproc/bind 2> /dev/null)
+	@echo ''
