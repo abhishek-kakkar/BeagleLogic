@@ -79,7 +79,7 @@ typedef struct capture_context {
 	uint32_t sampleunit;    // 0 = 16-bit, 1 = 8-bit
 	uint32_t triggerflags;  // 0 = one-shot, 1 = continuous sampling
 
-	bufferlist list_head;
+	buflist list_head;
 } ccontext;
 
 /* Forward declration */
@@ -424,12 +424,12 @@ int beaglelogic_set_triggerflags(struct device *dev, u32 triggerflags)
 static int beaglelogic_send_cmd(struct beaglelogicdev *bldev, uint32_t cmd)
 {
 #define TIMEOUT     200
-	uint32_t timout = TIMEOUT;
+	uint32_t timeout = TIMEOUT;
 
 	bldev->cxt_pru->cmd = cmd;
 
 	/* Wait for firmware to process the command */
-	while (--timeout && bdata->cxt_pru->cmd != 0)
+	while (--timeout && bldev->cxt_pru->cmd != 0)
 		cpu_relax();
 
 	if (timeout == 0)
