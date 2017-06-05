@@ -1122,8 +1122,10 @@ static int beaglelogic_probe(struct platform_device *pdev)
 
 	/* Allocate memory for our private structure */
 	bldev = kzalloc(sizeof(*bldev), GFP_KERNEL);
-	if (!bldev)
+	if (!bldev) {
+		ret = -1;
 		goto fail;
+	}
 
 	bldev->miscdev.fops = &pru_beaglelogic_fops;
 	bldev->miscdev.minor = MISC_DYNAMIC_MINOR;
@@ -1135,11 +1137,62 @@ static int beaglelogic_probe(struct platform_device *pdev)
 	dev_set_drvdata(bldev->p_dev, bldev);
 
 	/* Get a handle to the PRUSS structures */
+	dev = &pdev->dev;
+	bldev->pruss = pruss_get(dev);
+	if (IS_ERR(bldev->pruss)) {
+		ret = PTR_ERR(bldev->pruss);
+		if (ret != -EPROBE_DEFER)
+			dev_err(dev, "Unable to get pruss handle.\n");
+		goto fail_free;
+	}
+
+	bldev->pru0 = pruss_rproc_get(bldev->pruss, PRUSS_PRU0);
+	if (IS_ERR(bldev->pru0)) {
+		ret = PTR_ERR(bldev->pru0);
+		if (ret != -EPROBE_DEFER)
+			dev_err(dev, "Unable to get PRU0.\n");
+		goto fail_pruss_put;
+	}
+
+	ret = pruss_request_mem_region(bldev->pruss, PRUSS_MEM_DRAM0,
+		&bldev->pru0sram);
+	if (ret) {
+		dev_err(dev, "Unable to get PRUSS RAM.\n");
+		goto fail_putmem;
+	}
+
+	/* Get interrupts and install interrupt handlers */
+	bldev->from_bl_irq_1 = platform_get_irq_byname(pdev, "from_bl_1");
+	if (bldev->from_bl_irq_1 <= 0) {
+		ret = bldev->from_bl_irq_1;
+		if (ret == -EPROBE_DEFER)
+			goto fail_putmem;
+	}
+	bldev->from_bl_irq_2 = platform_get_irq_byname(pdev, "from_bl_2");
+	if (bldev->from_bl_irq_2 <= 0) {
+		ret = bldev->from_bl_irq_2;
+		if (ret == -EPROBE_DEFER)
+			goto fail_putmem;
+	}
+	bldev->to_bl_irq = platform_get_irq_byname(pdev, "to_bl");
+	if (bldev->to_bl_irq<= 0) {
+		ret = bldev->to_bl_irq;
+		if (ret == -EPROBE_DEFER)
+			goto fail_putmem;
+	}
+
+	ret = request_irq(bldev->from_bl_irq_1, beaglelogic_serve_irq,
+		IRQF_ONESHOT, dev_name(dev), bldev);
+	if (ret) goto fail_putmem;
+
+	ret = request_irq(bldev->from_bl_irq_2, beaglelogic_serve_irq,
+		IRQF_ONESHOT, dev_name(dev), bldev);
+	if (ret) goto fail_free_irq1;
 
 	/* Once done, register our misc device and link our private data */
-	err = misc_register(&bldev->miscdev);
-	if (err)
-		goto fail;
+	ret = misc_register(&bldev->miscdev);
+	if (ret)
+		goto fail_free_irqs;
 	dev = bldev->miscdev.this_device;
 	dev_set_drvdata(dev, bldev);
 
@@ -1147,6 +1200,9 @@ static int beaglelogic_probe(struct platform_device *pdev)
 	mutex_init(&bldev->mutex);
 	init_waitqueue_head(&bldev->wait);
 
+	/* Core clock frequency is 200 MHz */
+	bldev->coreclockfreq = 200000000;
+	
 	/* Power on in disabled state */
 	bldev->state = STATE_BL_DISABLED;
 
@@ -1226,9 +1282,20 @@ static int beaglelogic_probe(struct platform_device *pdev)
 	return 0;
 faildereg:
 	misc_deregister(&bldev->miscdev);
+fail_free_irqs:
+	free_irq(bldev->from_bl_irq_2, bldev);
+fail_free_irq1:
+	free_irq(bldev->from_bl_irq_1, bldev);
+fail_putmem:
+	if (bldev->pru0sram.va)
+		pruss_release_mem_region(bldev->pruss, &bldev->pru0sram);
+	pruss_rproc_put(bldev->pruss, bldev->pru0);
+fail_pruss_put:
+	pruss_put(bldev->pruss);
+fail_free:
 	kfree(bldev);
 fail:
-	return -1;
+	return ret;
 }
 
 static int beaglelogic_remove(struct platform_device *pdev)
@@ -1244,6 +1311,15 @@ static int beaglelogic_remove(struct platform_device *pdev)
 
 	/* Deregister the misc device */
 	misc_deregister(&bldev->miscdev);
+
+	/* Free IRQs */
+	free_irq(bldev->from_bl_irq_2, bldev);
+	free_irq(bldev->from_bl_irq_1, bldev);
+
+	/* Release handles to PRUSS memory regions */
+	pruss_release_mem_region(bldev->pruss, &bldev->pru0sram);
+	pruss_rproc_put(bldev->pruss, bldev->pru0);
+	pruss_put(bldev->pruss);
 
 	/* Free up memory */
 	kfree(bldev);
