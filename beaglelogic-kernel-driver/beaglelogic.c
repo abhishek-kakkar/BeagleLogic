@@ -438,14 +438,14 @@ static int beaglelogic_send_cmd(struct beaglelogicdev *bldev, uint32_t cmd)
 }
 
 /* This is [to be] called from a threaded IRQ handler */
-int beaglelogic_serve_irq(int irqno, void *data)
+irqreturn_t beaglelogic_serve_irq(int irqno, void *data)
 {
 	struct beaglelogicdev *bldev = data;
 	struct device *dev = bldev->miscdev.this_device;
 	u32 state = bldev->state;
 
 	dev_dbg(dev, "Beaglelogic IRQ #%d\n", irqno);
-	if (irqno == BL_IRQ_BUFREADY) {
+	if (irqno == bldev->from_bl_irq_1) {
 		/* Manage the buffers */
 		beaglelogic_unmap_buffer(dev,
 			bldev->lastbufready = bldev->bufbeingread);
@@ -457,7 +457,7 @@ int beaglelogic_serve_irq(int irqno, void *data)
 				bldev->bufbeingread = bldev->bufbeingread->next);
 		}
 		wake_up_interruptible(&bldev->wait);
-	} else if (irqno == BL_IRQ_CLEANUP) {
+	} else if (irqno == bldev->from_bl_irq_2) {
 		/* This interrupt occurs twice:
 		 *  1. After a successful configuration of PRU capture
 		 *  2. After the last buffer transferred  */
