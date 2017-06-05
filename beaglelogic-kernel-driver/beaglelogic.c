@@ -420,6 +420,7 @@ int beaglelogic_set_triggerflags(struct device *dev, u32 triggerflags)
 
 /* End Device Attributes Configuration Section */
 
+/* Send command to the PRU firmware */
 static int beaglelogic_send_cmd(struct beaglelogicdev *bldev, uint32_t cmd)
 {
 #define TIMEOUT     200
