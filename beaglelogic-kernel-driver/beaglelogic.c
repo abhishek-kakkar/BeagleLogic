@@ -113,15 +113,6 @@ struct beaglelogicdev {
 	int from_bl_irq_1;
 	int from_bl_irq_2;
 
-	/* Imported functions */
-	int (*downcall_idx)(int, u32, u32, u32, u32, u32, u32);
-	void __iomem *(*d_da_to_va)(int, u32);
-	int (*pru_start)(int);
-	void (*pru_request_stop)(void);
-
-	/* Exported functions */
-	int (*serve_irq)(int, void *);
-
 	/* Core clock frequency: Required for configuring sample rates */
 	u32 coreclockfreq;
 
@@ -438,6 +429,13 @@ static int beaglelogic_send_cmd(struct beaglelogicdev *bldev, uint32_t cmd)
 	return bldev->cxt_pru->resp;
 }
 
+/* Request the PRU firmware to stop capturing */
+static void beaglelogic_request_stop(struct beaglelogicdev *bldev)
+{
+	/* Trigger interrupt */
+	pruss_intc_trigger(bldev->to_bl_irq);
+}
+
 /* This is [to be] called from a threaded IRQ handler */
 irqreturn_t beaglelogic_serve_irq(int irqno, void *data)
 {
@@ -484,14 +482,16 @@ irqreturn_t beaglelogic_serve_irq(int irqno, void *data)
 int beaglelogic_write_configuration(struct device *dev)
 {
 	struct beaglelogicdev *bldev = dev_get_drvdata(dev);
-	int i;
+	int ret;
 
-	/* Do a downcall and hand over the settings */
-	i = bldev->downcall_idx(0, BL_DC_SM_TRIGGER,
-			(bldev->coreclockfreq / 2) / bldev->samplerate,
-			bldev->sampleunit, bldev->triggerflags, 0, 0);
+	/* Hand over the settings */
+	bldev->cxt_pru->samplediv =
+		(bldev->coreclockfreq / 2) / bldev->samplerate;
+	bldev->cxt_pru->sampleunit = bldev->sampleunit;
+	bldev->cxt_pru->triggerflags = bldev->triggerflags;
+	ret = beaglelogic_send_cmd(bldev, CMD_SET_CONFIG);
 
-	dev_dbg(dev, "PRU Config written, err code = %d\n", i);
+	dev_dbg(dev, "PRU Config written, err code = %d\n", ret);
 	return 0;
 }
 
@@ -507,8 +507,7 @@ int beaglelogic_start(struct device *dev)
 		return -1;
 	}
 	bldev->bufbeingread = &bldev->buffers[0];
-	bldev->pru_start(0);
-	bldev->downcall_idx(0, BL_DC_SM_ARM, 0, 0, 0, 0, 0);
+	beaglelogic_send_cmd(bldev, CMD_START);
 
 	/* All set now. Start the PRUs and wait for IRQs */
 	bldev->state = STATE_BL_RUNNING;
@@ -528,7 +527,7 @@ void beaglelogic_stop(struct device *dev)
 	struct beaglelogicdev *bldev = dev_get_drvdata(dev);
 
 	if (mutex_is_locked(&bldev->mutex)) {
-		bldev->pru_request_stop();
+		beaglelogic_request_stop(bldev);
 		bldev->state = STATE_BL_REQUEST_STOP;
 
 		/* Wait for the PRU to signal completion */
@@ -1131,17 +1130,11 @@ static int beaglelogic_probe(struct platform_device *pdev)
 	bldev->miscdev.mode = S_IRUGO;
 	bldev->miscdev.name = "beaglelogic";
 
-	/* Export the IRQ handler */
-	bldev->serve_irq = beaglelogic_serve_irq;
-
 	/* Link the platform device data to our private structure */
 	bldev->p_dev = &pdev->dev;
 	dev_set_drvdata(bldev->p_dev, bldev);
 
-	/* Bind to the pru_rproc module */
-	err = pruproc_beaglelogic_request_bind((void *)bldev);
-	if (err)
-		goto fail;
+	/* Get a handle to the PRUSS structures */
 
 	/* Once done, register our misc device and link our private data */
 	err = misc_register(&bldev->miscdev);
@@ -1157,8 +1150,19 @@ static int beaglelogic_probe(struct platform_device *pdev)
 	/* Power on in disabled state */
 	bldev->state = STATE_BL_DISABLED;
 
+	/* Capture context structure is at location 0000h in PRU0 SRAM */
+	bldev->cxt_pru = bldev->pru0sram.va + 0;
+
+	if (bldev->cxt_pru->magic == BL_FW_MAGIC)
+		dev_info(dev, "Valid PRU capture context structure "\
+				"found at offset %04X\n", 0);
+	else {
+		dev_err(dev, "Firmware error!\n");
+		goto faildereg;
+	}
+
 	/* Get firmware properties */
-	ret = bldev->downcall_idx(0, BL_DC_GET_VERSION, 0, 0, 0, 0, 0);
+	ret = beaglelogic_send_cmd(bldev, CMD_GET_VERSION);
 	if (ret != 0) {
 		dev_info(dev, "BeagleLogic PRU Firmware version: %d.%d\n",
 				ret >> 8, ret & 0xFF);
@@ -1167,7 +1171,7 @@ static int beaglelogic_probe(struct platform_device *pdev)
 		goto faildereg;
 	}
 
-	ret = bldev->downcall_idx(0, BL_DC_GET_MAX_SG, 0, 0, 0, 0, 0);
+	ret = beaglelogic_send_cmd(bldev, CMD_GET_MAX_SG);
 	if (ret > 0 && ret < 256) { /* Let's be reasonable here */
 		dev_info(dev, "Device supports max %d vector transfers\n", ret);
 		bldev->maxbufcount = ret;
@@ -1175,24 +1179,6 @@ static int beaglelogic_probe(struct platform_device *pdev)
 		dev_err(dev, "Firmware error!\n");
 		goto faildereg;
 	}
-
-	ret = bldev->downcall_idx(0, BL_DC_GET_CXT_PTR, 0, 0, 0, 0, 0);
-	bldev->cxt_pru = bldev->d_da_to_va(0, ret);
-
-	if (!bldev->cxt_pru) {
-		dev_err(dev, "BeagleLogic: Unable to access PRU SRAM.\n");
-		goto faildereg;
-	}
-
-	/* To be removed in the next iteration */
-	if (bldev->cxt_pru->magic == BL_FW_MAGIC)
-		dev_info(dev, "Valid PRU capture context structure "\
-				"found at offset %04X\n", ret);
-	else {
-		dev_err(dev, "Firmware error!\n");
-		goto faildereg;
-	}
-
 
 	/* Apply default configuration first */
 	bldev->samplerate = 100 * 1000 * 1000;
@@ -1249,9 +1235,6 @@ static int beaglelogic_remove(struct platform_device *pdev)
 {
 	struct beaglelogicdev *bldev = platform_get_drvdata(pdev);
 	struct device *dev = bldev->miscdev.this_device;
-
-	/* Unregister ourselves from the pru_rproc module */
-	pruproc_beaglelogic_request_unbind();
 
 	/* Free all buffers */
 	beaglelogic_memfree(dev);
