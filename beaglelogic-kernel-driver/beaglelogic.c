@@ -420,6 +420,23 @@ int beaglelogic_set_triggerflags(struct device *dev, u32 triggerflags)
 
 /* End Device Attributes Configuration Section */
 
+static int beaglelogic_send_cmd(struct beaglelogicdev *bldev, uint32_t cmd)
+{
+#define TIMEOUT     200
+	uint32_t timout = TIMEOUT;
+
+	bldev->cxt_pru->cmd = cmd;
+
+	/* Wait for firmware to process the command */
+	while (--timeout && bdata->cxt_pru->cmd != 0)
+		cpu_relax();
+
+	if (timeout == 0)
+		return -1;
+
+	return bldev->cxt_pru->resp;
+}
+
 /* This is [to be] called from a threaded IRQ handler */
 int beaglelogic_serve_irq(int irqno, void *data)
 {
