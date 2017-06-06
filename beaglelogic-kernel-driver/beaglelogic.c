@@ -61,13 +61,13 @@ enum bufstates {
 #define CMD_START       4   /* Arm the LA (start sampling) */
 
 /* PRU-side sample buffer descriptor */
-typedef struct prusamplebuf {
+struct buflist {
 	u32 dma_start_addr;
 	u32 dma_end_addr;
-} buflist;
+};
 
 /* Shared structure containing PRU attributes */
-typedef struct capture_context {
+struct capture_context {
 	/* Magic bytes */
 #define BL_FW_MAGIC	0xBEA61E10
 	uint32_t magic;         // Magic bytes, should be 0xBEA61E10
@@ -79,16 +79,15 @@ typedef struct capture_context {
 	uint32_t sampleunit;    // 0 = 16-bit, 1 = 8-bit
 	uint32_t triggerflags;  // 0 = one-shot, 1 = continuous sampling
 
-	buflist list_head;
-} ccontext;
+	struct buflist list_head;
+};
 
 /* Forward declration */
 static const struct file_operations pru_beaglelogic_fops;
 
 /* Buffers are arranged as an array but are
  * also circularly linked to simplify reads */
-typedef struct databuf logic_buffer;
-typedef struct databuf {
+struct logic_buffer {
 	void *buf;
 	dma_addr_t phys_addr;
 	size_t size;
@@ -96,8 +95,8 @@ typedef struct databuf {
 	unsigned short state;
 	unsigned short index;
 
-	logic_buffer *next;
-} logic_buffer;
+	struct logic_buffer *next;
+};
 
 struct beaglelogicdev {
 	/* Misc device descriptor */
@@ -123,9 +122,9 @@ struct beaglelogicdev {
 	struct mutex mutex;
 
 	/* Buffer management */
-	logic_buffer *buffers;
-	logic_buffer *lastbufready;
-	logic_buffer *bufbeingread;
+	struct logic_buffer *buffers;
+	struct logic_buffer *lastbufready;
+	struct logic_buffer *bufbeingread;
 	u32 bufcount;
 	wait_queue_head_t wait;
 
@@ -133,7 +132,7 @@ struct beaglelogicdev {
 	u32 previntcount;	/* Previous interrupt count read from PRU */
 
 	/* Firmware capabilities */
-	ccontext *cxt_pru;
+	struct capture_context *cxt_pru;
 
 	/* Device capabilities */
 	u32 maxbufcount;	/* Max buffer count supported by the PRU FW */
@@ -147,13 +146,13 @@ struct beaglelogicdev {
 	u32 lasterror;
 };
 
-typedef struct bufreader {
+struct logic_buffer_reader {
 	struct beaglelogicdev *bldev;
-	logic_buffer *buf;
+	struct logic_buffer *buf;
 
 	u32 pos;
 	u32 remaining;
-} logic_buffer_reader;
+};
 
 #define to_beaglelogicdev(dev)	container_of((dev), \
 		struct beaglelogicdev, miscdev)
@@ -191,7 +190,7 @@ static int beaglelogic_memalloc(struct device *dev, u32 bufsize)
 	bldev->bufcount = cnt;
 
 	/* Allocate buffer list */
-	bldev->buffers = devm_kzalloc(dev, sizeof(logic_buffer) * (cnt),
+	bldev->buffers = devm_kzalloc(dev, sizeof(struct logic_buffer) * (cnt),
 			GFP_KERNEL);
 	if (!bldev->buffers)
 		goto failnomem;
@@ -252,7 +251,7 @@ static void beaglelogic_memfree(struct device *dev)
 }
 
 /* No argument checking for the map/unmap functions */
-static int beaglelogic_map_buffer(struct device *dev, logic_buffer *buf)
+static int beaglelogic_map_buffer(struct device *dev, struct logic_buffer *buf)
 {
 	dma_addr_t dma_addr;
 
@@ -274,7 +273,8 @@ fail:
 	return -1;
 }
 
-static void beaglelogic_unmap_buffer(struct device *dev, logic_buffer *buf)
+static void beaglelogic_unmap_buffer(struct device *dev,
+                                     struct logic_buffer *buf)
 {
 	dma_unmap_single(dev, buf->phys_addr, buf->size, DMA_FROM_DEVICE);
 	buf->state = STATE_BL_BUF_UNMAPPED;
@@ -303,7 +303,7 @@ static void beaglelogic_fill_buffer_testpattern(struct device *dev)
 static int beaglelogic_map_and_submit_all_buffers(struct device *dev)
 {
 	struct beaglelogicdev *bldev = dev_get_drvdata(dev);
-	buflist *pru_buflist = &bldev->cxt_pru->list_head;
+	struct buflist *pru_buflist = &bldev->cxt_pru->list_head;
 	int i, j;
 	dma_addr_t addr;
 
@@ -544,7 +544,7 @@ void beaglelogic_stop(struct device *dev)
 /* fops */
 static int beaglelogic_f_open(struct inode *inode, struct file *filp)
 {
-	logic_buffer_reader *reader;
+	struct logic_buffer_reader *reader;
 	struct beaglelogicdev *bldev = to_beaglelogicdev(filp->private_data);
 	struct device *dev = bldev->miscdev.this_device;
 
@@ -574,7 +574,7 @@ ssize_t beaglelogic_f_read (struct file *filp, char __user *buf,
                           size_t sz, loff_t *offset)
 {
 	int count;
-	logic_buffer_reader *reader = filp->private_data;
+	struct logic_buffer_reader *reader = filp->private_data;
 	struct beaglelogicdev *bldev = reader->bldev;
 	struct device *dev = bldev->miscdev.this_device;
 
@@ -638,7 +638,7 @@ perform_copy:
 int beaglelogic_f_mmap(struct file *filp, struct vm_area_struct *vma)
 {
 	int i, ret;
-	logic_buffer_reader *reader = filp->private_data;
+	struct logic_buffer_reader *reader = filp->private_data;
 	struct beaglelogicdev *bldev = reader->bldev;
 
 	unsigned long addr = vma->vm_start;
@@ -664,7 +664,7 @@ int beaglelogic_f_mmap(struct file *filp, struct vm_area_struct *vma)
 static long beaglelogic_f_ioctl(struct file *filp, unsigned int cmd,
 		  unsigned long arg)
 {
-	logic_buffer_reader *reader = filp->private_data;
+	struct logic_buffer_reader *reader = filp->private_data;
 	struct beaglelogicdev *bldev = reader->bldev;
 	struct device *dev = bldev->miscdev.this_device;
 
@@ -773,7 +773,7 @@ static long beaglelogic_f_ioctl(struct file *filp, unsigned int cmd,
 /* llseek to offset zero resets the LA */
 static loff_t beaglelogic_f_llseek(struct file *filp, loff_t offset, int whence)
 {
-	logic_buffer_reader *reader = filp->private_data;
+	struct logic_buffer_reader *reader = filp->private_data;
 	struct beaglelogicdev *bldev = reader->bldev;
 	struct device *dev = bldev->miscdev.this_device;
 
@@ -824,9 +824,9 @@ static loff_t beaglelogic_f_llseek(struct file *filp, loff_t offset, int whence)
 unsigned int beaglelogic_f_poll(struct file *filp,
 		struct poll_table_struct *tbl)
 {
-	logic_buffer_reader *reader = filp->private_data;
+	struct logic_buffer_reader *reader = filp->private_data;
 	struct beaglelogicdev *bldev = reader->bldev;
-	logic_buffer *buf;
+	struct logic_buffer *buf;
 
 	/* Raise an error if polled without starting the LA first */
 	if (reader->buf == NULL && bldev->state != STATE_BL_RUNNING)
@@ -844,7 +844,7 @@ unsigned int beaglelogic_f_poll(struct file *filp,
 /* Device file close handler */
 static int beaglelogic_f_release(struct inode *inode, struct file *filp)
 {
-	logic_buffer_reader *reader = filp->private_data;
+	struct logic_buffer_reader *reader = filp->private_data;
 	struct beaglelogicdev *bldev = reader->bldev;
 	struct device *dev = bldev->miscdev.this_device;
 
@@ -992,7 +992,7 @@ static ssize_t bl_state_show(struct device *dev,
 {
 	struct beaglelogicdev *bldev = dev_get_drvdata(dev);
 	u32 state = bldev->state;
-	logic_buffer *buffer = bldev->bufbeingread;
+	struct logic_buffer *buffer = bldev->bufbeingread;
 
 	if (state == STATE_BL_RUNNING) {
 		/* State blocks and returns last buffer read */
@@ -1202,7 +1202,7 @@ static int beaglelogic_probe(struct platform_device *pdev)
 
 	/* Core clock frequency is 200 MHz */
 	bldev->coreclockfreq = 200000000;
-	
+
 	/* Power on in disabled state */
 	bldev->state = STATE_BL_DISABLED;
 
