@@ -161,9 +161,6 @@ struct logic_buffer_reader {
 #define DRV_VERSION	"1.2"
 
 /* Begin Buffer Management section */
-static int bufunitsize = 4 * 1024 * 1024;
-module_param(bufunitsize, int, S_IRUGO);
-MODULE_PARM_DESC(bufunitsize, " Size of each buffer unit [default 4 MB]");
 
 /* Allocate DMA buffers for the PRU
  * This method acquires & releases the device mutex */
@@ -242,11 +239,14 @@ static void beaglelogic_memfree(struct device *dev)
 	int i;
 
 	mutex_lock(&bldev->mutex);
-	for (i = 0; i < bldev->bufcount; i++)
-		kfree(bldev->buffers[i].buf);
+	if (bldev->buffers) {
+		for (i = 0; i < bldev->bufcount; i++)
+			kfree(bldev->buffers[i].buf);
 
-	if (bldev->buffers)
 		devm_kfree(dev, bldev->buffers);
+		bldev->buffers = NULL;
+		bldev->bufcount = 0;
+	}
 	mutex_unlock(&bldev->mutex);
 }
 
@@ -869,6 +869,34 @@ static const struct file_operations pru_beaglelogic_fops = {
 /* fops */
 
 /* begin sysfs attrs */
+static ssize_t bl_bufunitsize_show(struct device *dev,
+        struct device_attribute *attr, char *buf)
+{
+	struct beaglelogicdev *bldev = dev_get_drvdata(dev);
+
+	return scnprintf(buf, PAGE_SIZE, "%d\n", bldev->bufunitsize);
+}
+
+static ssize_t bl_bufunitsize_store(struct device *dev,
+        struct device_attribute *attr, const char *buf, size_t count)
+{
+	struct beaglelogicdev *bldev = dev_get_drvdata(dev);
+	uint32_t val;
+
+	if (kstrtouint(buf, 10, &val))
+		return -EINVAL;
+
+	if (val < 32)
+		return -EINVAL;
+
+	bldev->bufunitsize = round_up(val, 32);
+
+	/* Free up previously allocated buffers */
+	beaglelogic_memfree(dev);
+
+	return count;
+}
+
 static ssize_t bl_memalloc_show(struct device *dev,
         struct device_attribute *attr, char *buf)
 {
@@ -1069,6 +1097,9 @@ static ssize_t bl_testpattern_store(struct device *dev,
 	return count;
 }
 
+static DEVICE_ATTR(bufunitsize, S_IWUSR | S_IRUGO,
+		bl_bufunitsize_show, bl_bufunitsize_store);
+
 static DEVICE_ATTR(memalloc, S_IWUSR | S_IRUGO,
 		bl_memalloc_show, bl_memalloc_store);
 
@@ -1094,6 +1125,7 @@ static DEVICE_ATTR(filltestpattern, S_IWUSR,
 		NULL, bl_testpattern_store);
 
 static struct attribute *beaglelogic_attributes[] = {
+	&dev_attr_bufunitsize.attr,
 	&dev_attr_memalloc.attr,
 	&dev_attr_samplerate.attr,
 	&dev_attr_sampleunit.attr,
@@ -1254,12 +1286,6 @@ static int beaglelogic_probe(struct platform_device *pdev)
 	if (!of_property_read_u32(node, "triggerflags", &val))
 		if (beaglelogic_set_triggerflags(dev, val))
 			dev_warn(dev, "Invalid default triggerflags\n");
-
-	if (bufunitsize < 2 * 1024 * 1024)
-		dev_warn(dev, "WARNING:Buffer unit sizes less than "\
-				"2 MB are not recommended. Using 4 MB");
-	else
-		bldev->bufunitsize = bufunitsize;
 
 	/* We got configuration from PRUs, now mark device init'd */
 	bldev->state = STATE_BL_INITIALIZED;
