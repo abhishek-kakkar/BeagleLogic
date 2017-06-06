@@ -62,8 +62,8 @@ enum bufstates {
 
 /* PRU-side sample buffer descriptor */
 struct buflist {
-	u32 dma_start_addr;
-	u32 dma_end_addr;
+	uint32_t dma_start_addr;
+	uint32_t dma_end_addr;
 };
 
 /* Shared structure containing PRU attributes */
@@ -113,7 +113,7 @@ struct beaglelogicdev {
 	int from_bl_irq_2;
 
 	/* Core clock frequency: Required for configuring sample rates */
-	u32 coreclockfreq;
+	uint32_t coreclockfreq;
 
 	/* Private data */
 	struct device *p_dev; /* Parent platform device */
@@ -125,33 +125,33 @@ struct beaglelogicdev {
 	struct logic_buffer *buffers;
 	struct logic_buffer *lastbufready;
 	struct logic_buffer *bufbeingread;
-	u32 bufcount;
+	uint32_t bufcount;
 	wait_queue_head_t wait;
 
 	/* ISR Bookkeeping */
-	u32 previntcount;	/* Previous interrupt count read from PRU */
+	uint32_t previntcount;	/* Previous interrupt count read from PRU */
 
 	/* Firmware capabilities */
 	struct capture_context *cxt_pru;
 
 	/* Device capabilities */
-	u32 maxbufcount;	/* Max buffer count supported by the PRU FW */
-	u32 bufunitsize;  	/* Size of 1 Allocation unit */
-	u32 samplerate; 	/* Sample rate = 100 / n MHz, n = 2+ (int) */
-	u32 triggerflags;	/* bit 0 : 1shot/!continuous */
-	u32 sampleunit; 	/* 0:8bits, 1:16bits */
+	uint32_t maxbufcount;	/* Max buffer count supported by the PRU FW */
+	uint32_t bufunitsize;  	/* Size of 1 Allocation unit */
+	uint32_t samplerate; 	/* Sample rate = 100 / n MHz, n = 2+ (int) */
+	uint32_t triggerflags;	/* bit 0 : 1shot/!continuous */
+	uint32_t sampleunit; 	/* 0:8bits, 1:16bits */
 
 	/* State */
-	u32 state;
-	u32 lasterror;
+	uint32_t state;
+	uint32_t lasterror;
 };
 
 struct logic_buffer_reader {
 	struct beaglelogicdev *bldev;
 	struct logic_buffer *buf;
 
-	u32 pos;
-	u32 remaining;
+	uint32_t pos;
+	uint32_t remaining;
 };
 
 #define to_beaglelogicdev(dev)	container_of((dev), \
@@ -167,7 +167,7 @@ MODULE_PARM_DESC(bufunitsize, " Size of each buffer unit [default 4 MB]");
 
 /* Allocate DMA buffers for the PRU
  * This method acquires & releases the device mutex */
-static int beaglelogic_memalloc(struct device *dev, u32 bufsize)
+static int beaglelogic_memalloc(struct device *dev, uint32_t bufsize)
 {
 	struct beaglelogicdev *bldev = dev_get_drvdata(dev);
 	int i, cnt;
@@ -179,7 +179,7 @@ static int beaglelogic_memalloc(struct device *dev, u32 bufsize)
 
 	/* Compute no. of buffers to allocate, round up
 	 * We need at least two buffers for ping-pong action */
-	cnt = max(DIV_ROUND_UP(bufsize, bldev->bufunitsize), (u32)2);
+	cnt = max(DIV_ROUND_UP(bufsize, bldev->bufunitsize), (uint32_t)2);
 
 	/* Too large? */
 	if (cnt > bldev->maxbufcount) {
@@ -286,7 +286,7 @@ static void beaglelogic_fill_buffer_testpattern(struct device *dev)
 {
 	struct beaglelogicdev *bldev = dev_get_drvdata(dev);
 	int i, j;
-	u32 cnt = 0, *addr;
+	uint32_t cnt = 0, *addr;
 
 	mutex_lock(&bldev->mutex);
 	for (i = 0; i < bldev->bufcount; i++) {
@@ -345,13 +345,13 @@ fail:
 /* Begin Device Attributes Configuration Section
  * All set operations lock and unlock the device mutex */
 
-u32 beaglelogic_get_samplerate(struct device *dev)
+uint32_t beaglelogic_get_samplerate(struct device *dev)
 {
 	struct beaglelogicdev *bldev = dev_get_drvdata(dev);
 	return bldev->samplerate;
 }
 
-int beaglelogic_set_samplerate(struct device *dev, u32 samplerate)
+int beaglelogic_set_samplerate(struct device *dev, uint32_t samplerate)
 {
 	struct beaglelogicdev *bldev = dev_get_drvdata(dev);
 	if (samplerate > bldev->coreclockfreq / 2 || samplerate < 1)
@@ -367,13 +367,13 @@ int beaglelogic_set_samplerate(struct device *dev, u32 samplerate)
 	return -EBUSY;
 }
 
-u32 beaglelogic_get_sampleunit(struct device *dev)
+uint32_t beaglelogic_get_sampleunit(struct device *dev)
 {
 	struct beaglelogicdev *bldev = dev_get_drvdata(dev);
 	return bldev->sampleunit;
 }
 
-int beaglelogic_set_sampleunit(struct device *dev, u32 sampleunit)
+int beaglelogic_set_sampleunit(struct device *dev, uint32_t sampleunit)
 {
 	struct beaglelogicdev *bldev = dev_get_drvdata(dev);
 	if (sampleunit > 2)
@@ -388,13 +388,13 @@ int beaglelogic_set_sampleunit(struct device *dev, u32 sampleunit)
 	return -EBUSY;
 }
 
-u32 beaglelogic_get_triggerflags(struct device *dev)
+uint32_t beaglelogic_get_triggerflags(struct device *dev)
 {
 	struct beaglelogicdev *bldev = dev_get_drvdata(dev);
 	return bldev->triggerflags;
 }
 
-int beaglelogic_set_triggerflags(struct device *dev, u32 triggerflags)
+int beaglelogic_set_triggerflags(struct device *dev, uint32_t triggerflags)
 {
 	struct beaglelogicdev *bldev = dev_get_drvdata(dev);
 	if (triggerflags > 1)
@@ -441,7 +441,7 @@ irqreturn_t beaglelogic_serve_irq(int irqno, void *data)
 {
 	struct beaglelogicdev *bldev = data;
 	struct device *dev = bldev->miscdev.this_device;
-	u32 state = bldev->state;
+	uint32_t state = bldev->state;
 
 	dev_dbg(dev, "Beaglelogic IRQ #%d\n", irqno);
 	if (irqno == bldev->from_bl_irq_1) {
@@ -668,7 +668,7 @@ static long beaglelogic_f_ioctl(struct file *filp, unsigned int cmd,
 	struct beaglelogicdev *bldev = reader->bldev;
 	struct device *dev = bldev->miscdev.this_device;
 
-	u32 val;
+	uint32_t val;
 
 	dev_dbg(dev, "BeagleLogic: IOCTL called cmd = %08X, "\
 			"arg = %08lX\n", cmd, arg);
@@ -685,7 +685,7 @@ static long beaglelogic_f_ioctl(struct file *filp, unsigned int cmd,
 			return 0;
 
 		case IOCTL_BL_SET_SAMPLE_RATE:
-			if (beaglelogic_set_samplerate(dev, (u32)arg))
+			if (beaglelogic_set_samplerate(dev, (uint32_t)arg))
 				return -EFAULT;
 			return 0;
 
@@ -697,7 +697,7 @@ static long beaglelogic_f_ioctl(struct file *filp, unsigned int cmd,
 			return 0;
 
 		case IOCTL_BL_SET_SAMPLE_UNIT:
-			if (beaglelogic_set_sampleunit(dev, (u32)arg))
+			if (beaglelogic_set_sampleunit(dev, (uint32_t)arg))
 				return -EFAULT;
 			return 0;
 
@@ -709,7 +709,7 @@ static long beaglelogic_f_ioctl(struct file *filp, unsigned int cmd,
 			return 0;
 
 		case IOCTL_BL_SET_TRIGGER_FLAGS:
-			if (beaglelogic_set_triggerflags(dev, (u32)arg))
+			if (beaglelogic_set_triggerflags(dev, (uint32_t)arg))
 				return -EFAULT;
 			return 0;
 
@@ -778,7 +778,7 @@ static loff_t beaglelogic_f_llseek(struct file *filp, loff_t offset, int whence)
 	struct device *dev = bldev->miscdev.this_device;
 
 	loff_t i = offset;
-	u32 j;
+	uint32_t j;
 
 	if (whence == SEEK_CUR) {
 		while (i > 0) {
@@ -789,7 +789,7 @@ static loff_t beaglelogic_f_llseek(struct file *filp, loff_t offset, int whence)
 				bldev->lasterror = 0x10000 | reader->buf->index;
 			}
 
-			j = min((u32)i, reader->remaining);
+			j = min((uint32_t)i, reader->remaining);
 			reader->pos += j;
 
 			if ((reader->remaining -= j) == 0) {
@@ -882,7 +882,7 @@ static ssize_t bl_memalloc_store(struct device *dev,
         struct device_attribute *attr, const char *buf, size_t count)
 {
 	struct beaglelogicdev *bldev = dev_get_drvdata(dev);
-	u32 val;
+	uint32_t val;
 	int ret;
 
 	if (kstrtouint(buf, 10, &val))
@@ -912,7 +912,7 @@ static ssize_t bl_samplerate_show(struct device *dev,
 static ssize_t bl_samplerate_store(struct device *dev,
 		struct device_attribute *attr, const char *buf, size_t count)
 {
-	u32 val;
+	uint32_t val;
 
 	if (kstrtouint(buf, 10, &val))
 		return -EINVAL;
@@ -927,7 +927,7 @@ static ssize_t bl_samplerate_store(struct device *dev,
 static ssize_t bl_sampleunit_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
-	u32 ret = beaglelogic_get_sampleunit(dev);
+	uint32_t ret = beaglelogic_get_sampleunit(dev);
 	int cnt = scnprintf(buf, PAGE_SIZE, "%d:", ret);
 
 	switch (ret)
@@ -947,7 +947,7 @@ static ssize_t bl_sampleunit_store(struct device *dev,
 		struct device_attribute *attr, const char *buf, size_t count)
 {
 	int err;
-	u32 val;
+	uint32_t val;
 
 	if (kstrtouint(buf, 10, &val))
 		return -EINVAL;
@@ -975,7 +975,7 @@ static ssize_t bl_triggerflags_show(struct device *dev,
 static ssize_t bl_triggerflags_store(struct device *dev,
 		struct device_attribute *attr, const char *buf, size_t count)
 {
-	u32 val;
+	uint32_t val;
 	int err;
 
 	if (kstrtouint(buf, 10, &val))
@@ -991,7 +991,7 @@ static ssize_t bl_state_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
 	struct beaglelogicdev *bldev = dev_get_drvdata(dev);
-	u32 state = bldev->state;
+	uint32_t state = bldev->state;
 	struct logic_buffer *buffer = bldev->bufbeingread;
 
 	if (state == STATE_BL_RUNNING) {
@@ -1008,7 +1008,7 @@ static ssize_t bl_state_show(struct device *dev,
 static ssize_t bl_state_store(struct device *dev,
 		struct device_attribute *attr, const char *buf, size_t count)
 {
-	u32 val;
+	uint32_t val;
 
 	if (kstrtouint(buf, 10, &val))
 		return -EINVAL;
@@ -1033,7 +1033,7 @@ static ssize_t bl_buffers_show(struct device *dev,
 
 	for (i = 0, c = 0, cnt = 0; i < bldev->bufcount; i++) {
 		c = scnprintf(buf, PAGE_SIZE, "%08x,%u\n",
-				(u32)bldev->buffers[i].phys_addr,
+				(uint32_t)bldev->buffers[i].phys_addr,
 				bldev->buffers[i].size);
 		cnt += c;
 		buf += c;
@@ -1057,7 +1057,7 @@ static ssize_t bl_lasterror_show(struct device *dev,
 static ssize_t bl_testpattern_store(struct device *dev,
 		struct device_attribute *attr, const char *buf, size_t count)
 {
-	u32 val;
+	uint32_t val;
 
 	if (kstrtouint(buf, 10, &val))
 		return -EINVAL;
@@ -1116,7 +1116,7 @@ static int beaglelogic_probe(struct platform_device *pdev)
 	int err, ret;
 	struct beaglelogicdev *bldev;
 	struct device *dev;
-	u32 val;
+	uint32_t val;
 
 	printk("BeagleLogic loaded and initializing\n");
 
