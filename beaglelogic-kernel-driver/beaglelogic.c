@@ -932,12 +932,12 @@ static ssize_t bl_sampleunit_show(struct device *dev,
 
 	switch (ret)
 	{
-		case 0:
-			cnt += scnprintf(buf, PAGE_SIZE, "8bits,norle\n");
+		case BL_SAMPLEUNIT_16_BITS:
+			cnt += scnprintf(buf, PAGE_SIZE, "16bit\n");
 			break;
 
-		case 1:
-			cnt += scnprintf(buf, PAGE_SIZE, "16bit,norle\n");
+		case BL_SAMPLEUNIT_8_BITS:
+			cnt += scnprintf(buf, PAGE_SIZE, "8bit\n");
 			break;
 	}
 	return cnt;
