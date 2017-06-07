@@ -53,6 +53,7 @@ enum beaglelogic_sampleunit {
 #define IOCTL_BL_SET_BUFFER_SIZE    _IOW('k', 0x26, u32)
 
 #define IOCTL_BL_GET_BUFUNIT_SIZE   _IOR('k', 0x27, u32)
+#define IOCTL_BL_SET_BUFUNIT_SIZE   _IOW('k', 0x27, u32)
 
 #define IOCTL_BL_FILL_TEST_PATTERN   _IO('k', 0x28)
 

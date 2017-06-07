@@ -751,6 +751,13 @@ static long beaglelogic_f_ioctl(struct file *filp, unsigned int cmd,
 				return -EFAULT;
 			return 0;
 
+		case IOCTL_BL_SET_BUFUNIT_SIZE:
+			if ((uint32_t)arg < 32)
+				return -EINVAL;
+			bldev->bufunitsize = round_up(arg, 32);
+			beaglelogic_memfree(dev);
+			return 0;
+
 		case IOCTL_BL_FILL_TEST_PATTERN:
 			beaglelogic_fill_buffer_testpattern(dev);
 			return 0;
