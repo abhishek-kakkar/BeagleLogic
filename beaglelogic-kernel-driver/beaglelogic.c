@@ -531,8 +531,8 @@ void beaglelogic_stop(struct device *dev)
 		bldev->state = STATE_BL_REQUEST_STOP;
 
 		/* Wait for the PRU to signal completion */
-		wait_event_interruptible_timeout(bldev->wait,
-				bldev->state == STATE_BL_INITIALIZED, HZ / 100);
+		wait_event_interruptible(bldev->wait,
+				bldev->state == STATE_BL_INITIALIZED);
 
 		/* Release */
 		mutex_unlock(&bldev->mutex);
