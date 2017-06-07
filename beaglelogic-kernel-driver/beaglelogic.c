@@ -604,9 +604,11 @@ ssize_t beaglelogic_f_read (struct file *filp, char __user *buf,
 	if (filp->f_flags & O_NONBLOCK) {
 		if (reader->buf->state != STATE_BL_BUF_UNMAPPED)
 			return -EAGAIN;
-	} else
-		wait_event_interruptible(bldev->wait,
-				reader->buf->state == STATE_BL_BUF_UNMAPPED);
+	} else {
+		if (wait_event_interruptible(bldev->wait,
+				reader->buf->state == STATE_BL_BUF_UNMAPPED))
+			return -ERESTARTSYS;
+	}
 perform_copy:
 	count = min(reader->remaining, sz);
 
