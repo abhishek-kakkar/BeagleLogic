@@ -446,14 +446,14 @@ irqreturn_t beaglelogic_serve_irq(int irqno, void *data)
 	dev_dbg(dev, "Beaglelogic IRQ #%d\n", irqno);
 	if (irqno == bldev->from_bl_irq_1) {
 		/* Manage the buffers */
-		beaglelogic_unmap_buffer(dev,
-			bldev->lastbufready = bldev->bufbeingread);
+		bldev->lastbufready = bldev->bufbeingread;
+		beaglelogic_unmap_buffer(dev, bldev->lastbufready);
 
 		/* Avoid a false buffer overrun warning on the last run */
 		if (bldev->triggerflags != BL_TRIGGERFLAGS_ONESHOT ||
 			bldev->bufbeingread->next->index != 0) {
-			beaglelogic_map_buffer(dev,
-				bldev->bufbeingread = bldev->bufbeingread->next);
+			bldev->bufbeingread = bldev->bufbeingread->next;
+			beaglelogic_map_buffer(dev, bldev->bufbeingread);
 		}
 		wake_up_interruptible(&bldev->wait);
 	} else if (irqno == bldev->from_bl_irq_2) {
