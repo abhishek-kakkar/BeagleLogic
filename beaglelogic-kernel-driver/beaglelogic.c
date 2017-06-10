@@ -533,13 +533,15 @@ void beaglelogic_stop(struct device *dev)
 	struct beaglelogicdev *bldev = dev_get_drvdata(dev);
 
 	if (mutex_is_locked(&bldev->mutex)) {
-		beaglelogic_request_stop(bldev);
-		bldev->state = STATE_BL_REQUEST_STOP;
+		if (bldev->state == STATE_BL_RUNNING)
+		{
+			beaglelogic_request_stop(bldev);
+			bldev->state = STATE_BL_REQUEST_STOP;
 
-		/* Wait for the PRU to signal completion */
-		wait_event_interruptible(bldev->wait,
-				bldev->state == STATE_BL_INITIALIZED);
-
+			/* Wait for the PRU to signal completion */
+			wait_event_interruptible(bldev->wait,
+					bldev->state == STATE_BL_INITIALIZED);
+		}
 		/* Release */
 		mutex_unlock(&bldev->mutex);
 
