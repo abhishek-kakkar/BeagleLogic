@@ -753,7 +753,7 @@ static long beaglelogic_f_ioctl(struct file *filp, unsigned int cmd,
 			val = beaglelogic_memalloc(dev, arg);
 			if (!val)
 				return beaglelogic_map_and_submit_all_buffers(dev);
-			return 0;
+			return val;
 
 		case IOCTL_BL_GET_BUFUNIT_SIZE:
 			if (copy_to_user((void * __user)arg,
@@ -944,8 +944,10 @@ static ssize_t bl_memalloc_store(struct device *dev,
 	beaglelogic_memfree(dev);
 	ret = beaglelogic_memalloc(dev, val);
 
-	if (!ret && val)
+	if (!ret)
 		beaglelogic_map_and_submit_all_buffers(dev);
+	else
+		return ret;
 
 	return count;
 }
