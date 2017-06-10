@@ -22,6 +22,7 @@
 
 #include <linux/platform_device.h>
 #include <linux/pruss.h>
+#include <linux/remoteproc.h>
 #include <linux/miscdevice.h>
 
 #include <linux/io.h>
@@ -98,6 +99,10 @@ struct logic_buffer {
 	struct logic_buffer *next;
 };
 
+struct beaglelogic_private_data {
+	const char *fw_names[PRUSS_NUM_PRUS];
+};
+
 struct beaglelogicdev {
 	/* Misc device descriptor */
 	struct miscdevice miscdev;
@@ -106,6 +111,7 @@ struct beaglelogicdev {
 	struct pruss *pruss;
 	struct rproc *pru0, *pru1;
 	struct pruss_mem_region pru0sram;
+	const struct beaglelogic_private_data *fw_data;
 
 	/* IRQ numbers */
 	int to_bl_irq;
@@ -1151,13 +1157,23 @@ static struct attribute_group beaglelogic_attr_group = {
 };
 /* end sysfs attrs */
 
+static const struct of_device_id beaglelogic_dt_ids[];
+
 static int beaglelogic_probe(struct platform_device *pdev)
 {
 	struct device_node *node = pdev->dev.of_node;
 	int err, ret;
 	struct beaglelogicdev *bldev;
 	struct device *dev;
+	const struct of_device_id *match;
 	uint32_t val;
+
+	if (!node)
+		return -ENODEV; /* No support for non-DT platforms */
+
+	match = of_match_device(beaglelogic_dt_ids, &pdev->dev);
+	if (!match)
+		return -ENODEV;
 
 	printk("BeagleLogic loaded and initializing\n");
 
@@ -1168,6 +1184,7 @@ static int beaglelogic_probe(struct platform_device *pdev)
 		goto fail;
 	}
 
+	bldev->fw_data = match->data;
 	bldev->miscdev.fops = &pru_beaglelogic_fops;
 	bldev->miscdev.minor = MISC_DYNAMIC_MINOR;
 	bldev->miscdev.mode = S_IRUGO;
@@ -1193,6 +1210,14 @@ static int beaglelogic_probe(struct platform_device *pdev)
 		if (ret != -EPROBE_DEFER)
 			dev_err(dev, "Unable to get PRU0.\n");
 		goto fail_pruss_put;
+	}
+
+	bldev->pru1 = pruss_rproc_get(bldev->pruss, PRUSS_PRU1);
+	if (IS_ERR(bldev->pru1)) {
+		ret = PTR_ERR(bldev->pru1);
+		if (ret != -EPROBE_DEFER)
+			dev_err(dev, "Unable to get PRU0.\n");
+		goto fail_pru0_put;
 	}
 
 	ret = pruss_request_mem_region(bldev->pruss, PRUSS_MEM_DRAM0,
@@ -1230,10 +1255,37 @@ static int beaglelogic_probe(struct platform_device *pdev)
 		IRQF_ONESHOT, dev_name(dev), bldev);
 	if (ret) goto fail_free_irq1;
 
+	/* Set firmware and boot the PRUs */
+	ret = rproc_set_firmware(bldev->pru0, bldev->fw_data->fw_names[0]);
+	if (ret) {
+		dev_err(dev, "Failed to set PRU0 firmware %s: %d\n",
+			bldev->fw_data->fw_names[0], ret);
+		goto fail_free_irqs;
+	}
+
+	ret = rproc_set_firmware(bldev->pru1, bldev->fw_data->fw_names[1]);
+	if (ret) {
+		dev_err(dev, "Failed to set PRU1 firmware %s: %d\n",
+			bldev->fw_data->fw_names[1], ret);
+		goto fail_free_irqs;
+	}
+
+	ret = rproc_boot(bldev->pru1);
+	if (ret) {
+		dev_err(dev, "Failed to boot PRU1: %d\n", ret);
+		goto fail_free_irqs;
+	}
+
+	ret = rproc_boot(bldev->pru0);
+	if (ret) {
+		dev_err(dev, "Failed to boot PRU0: %d\n", ret);
+		goto fail_shutdown_pru1;
+	}
+
 	/* Once done, register our misc device and link our private data */
 	ret = misc_register(&bldev->miscdev);
 	if (ret)
-		goto fail_free_irqs;
+		goto fail_shutdown_prus;
 	dev = bldev->miscdev.this_device;
 	dev_set_drvdata(dev, bldev);
 
@@ -1317,6 +1369,10 @@ static int beaglelogic_probe(struct platform_device *pdev)
 	return 0;
 faildereg:
 	misc_deregister(&bldev->miscdev);
+fail_shutdown_prus:
+	rproc_shutdown(bldev->pru0);
+fail_shutdown_pru1:
+	rproc_shutdown(bldev->pru1);
 fail_free_irqs:
 	free_irq(bldev->from_bl_irq_2, bldev);
 fail_free_irq1:
@@ -1324,6 +1380,8 @@ fail_free_irq1:
 fail_putmem:
 	if (bldev->pru0sram.va)
 		pruss_release_mem_region(bldev->pruss, &bldev->pru0sram);
+	pruss_rproc_put(bldev->pruss, bldev->pru1);
+fail_pru0_put:
 	pruss_rproc_put(bldev->pruss, bldev->pru0);
 fail_pruss_put:
 	pruss_put(bldev->pruss);
@@ -1347,12 +1405,17 @@ static int beaglelogic_remove(struct platform_device *pdev)
 	/* Deregister the misc device */
 	misc_deregister(&bldev->miscdev);
 
+	/* Shutdown the PRUs */
+	rproc_shutdown(bldev->pru0);
+	rproc_shutdown(bldev->pru1);
+
 	/* Free IRQs */
 	free_irq(bldev->from_bl_irq_2, bldev);
 	free_irq(bldev->from_bl_irq_1, bldev);
 
 	/* Release handles to PRUSS memory regions */
 	pruss_release_mem_region(bldev->pruss, &bldev->pru0sram);
+	pruss_rproc_put(bldev->pruss, bldev->pru1);
 	pruss_rproc_put(bldev->pruss, bldev->pru0);
 	pruss_put(bldev->pruss);
 
@@ -1364,10 +1427,16 @@ static int beaglelogic_remove(struct platform_device *pdev)
 	return 0;
 }
 
+static struct beaglelogic_private_data beaglelogic_pdata = {
+	.fw_names[0] = "beaglelogic-pru0-fw",
+	.fw_names[1] = "beaglelogic-pru1-fw",
+};
+
 static const struct of_device_id beaglelogic_dt_ids[] = {
-	{ .compatible = "beaglelogic,beaglelogic", .data = NULL, },
+	{ .compatible = "beaglelogic,beaglelogic", .data = &beaglelogic_pdata, },
 	{ /* sentinel */ },
 };
+MODULE_DEVICE_TABLE(of, beaglelogic_dt_ids);
 
 static struct platform_driver beaglelogic_driver = {
 	.driver = {
