@@ -231,6 +231,8 @@ failrelease:
 			kfree(bldev->buffers[i].buf);
 	}
 	devm_kfree(dev, bldev->buffers);
+	bldev->bufcount = 0;
+	bldev->buffers = NULL;
 	dev_err(dev, "Sample buffer allocation:");
 failnomem:
 	dev_err(dev, "Not enough memory\n");
@@ -247,7 +249,8 @@ static void beaglelogic_memfree(struct device *dev)
 	mutex_lock(&bldev->mutex);
 	if (bldev->buffers) {
 		for (i = 0; i < bldev->bufcount; i++)
-			kfree(bldev->buffers[i].buf);
+			if (bldev->buffers[i].buf)
+				kfree(bldev->buffers[i].buf);
 
 		devm_kfree(dev, bldev->buffers);
 		bldev->buffers = NULL;
