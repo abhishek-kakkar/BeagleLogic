@@ -1161,11 +1161,11 @@ static const struct of_device_id beaglelogic_dt_ids[];
 
 static int beaglelogic_probe(struct platform_device *pdev)
 {
-	struct device_node *node = pdev->dev.of_node;
-	int err, ret;
 	struct beaglelogicdev *bldev;
 	struct device *dev;
+	struct device_node *node = pdev->dev.of_node;
 	const struct of_device_id *match;
+	int ret;
 	uint32_t val;
 
 	if (!node)
@@ -1174,8 +1174,6 @@ static int beaglelogic_probe(struct platform_device *pdev)
 	match = of_match_device(beaglelogic_dt_ids, &pdev->dev);
 	if (!match)
 		return -ENODEV;
-
-	printk("BeagleLogic loaded and initializing\n");
 
 	/* Allocate memory for our private structure */
 	bldev = kzalloc(sizeof(*bldev), GFP_KERNEL);
@@ -1282,6 +1280,8 @@ static int beaglelogic_probe(struct platform_device *pdev)
 		goto fail_shutdown_pru1;
 	}
 
+	printk("BeagleLogic loaded and initializing\n");
+
 	/* Once done, register our misc device and link our private data */
 	ret = misc_register(&bldev->miscdev);
 	if (ret)
@@ -1360,8 +1360,8 @@ static int beaglelogic_probe(struct platform_device *pdev)
 			bldev->bufunitsize);
 
 	/* Once done, create device files */
-	err = sysfs_create_group(&dev->kobj, &beaglelogic_attr_group);
-	if (err) {
+	ret = sysfs_create_group(&dev->kobj, &beaglelogic_attr_group);
+	if (ret) {
 		dev_err(dev, "Registration failed.\n");
 		goto faildereg;
 	}
