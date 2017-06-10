@@ -1268,16 +1268,16 @@ static int beaglelogic_probe(struct platform_device *pdev)
 		goto fail_free_irqs;
 	}
 
-	ret = rproc_boot(bldev->pru1);
-	if (ret) {
-		dev_err(dev, "Failed to boot PRU1: %d\n", ret);
-		goto fail_free_irqs;
-	}
-
 	ret = rproc_boot(bldev->pru0);
 	if (ret) {
 		dev_err(dev, "Failed to boot PRU0: %d\n", ret);
-		goto fail_shutdown_pru1;
+		goto fail_free_irqs;
+	}
+
+	ret = rproc_boot(bldev->pru1);
+	if (ret) {
+		dev_err(dev, "Failed to boot PRU1: %d\n", ret);
+		goto fail_shutdown_pru0;
 	}
 
 	printk("BeagleLogic loaded and initializing\n");
@@ -1370,9 +1370,9 @@ static int beaglelogic_probe(struct platform_device *pdev)
 faildereg:
 	misc_deregister(&bldev->miscdev);
 fail_shutdown_prus:
-	rproc_shutdown(bldev->pru0);
-fail_shutdown_pru1:
 	rproc_shutdown(bldev->pru1);
+fail_shutdown_pru0:
+	rproc_shutdown(bldev->pru0);
 fail_free_irqs:
 	free_irq(bldev->from_bl_irq_2, bldev);
 fail_free_irq1:
@@ -1406,8 +1406,8 @@ static int beaglelogic_remove(struct platform_device *pdev)
 	misc_deregister(&bldev->miscdev);
 
 	/* Shutdown the PRUs */
-	rproc_shutdown(bldev->pru0);
 	rproc_shutdown(bldev->pru1);
+	rproc_shutdown(bldev->pru0);
 
 	/* Free IRQs */
 	free_irq(bldev->from_bl_irq_2, bldev);
