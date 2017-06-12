@@ -45,7 +45,6 @@
 #include <linux/fs.h>
 
 #include "beaglelogic.h"
-#include "beaglelogic_glue.h"
 
 /* Buffer states */
 enum bufstates {
