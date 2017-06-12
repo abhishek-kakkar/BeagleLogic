@@ -1,5 +1,5 @@
 # Makefile for BeagleLogic PRU firmware
-# Based on Makefile provided by TI examples 
+# Based on Makefile provided by TI examples
 #
 # PRU_CGT environment variable must point to the TI PRU code gen tools directory. E.g.:
 #(Desktop Linux) export PRU_CGT=/path/to/pru/code/gen/tools/ti-cgt-pru_2.1.2
@@ -131,30 +131,16 @@ clean:
 -include $(OBJECTS_PRU1:%.object=%.pp)
 
 # Deployment commands
-deploy: deploy-pru1 deploy-pru0
+deploy: deploy-pru0 deploy-pru1
 
-deploycheck:
-# ifneq ($(shell uname -m), armv7l)
-# $(error 'Deploy must be run on the BeagleBone, not on PC')
-# endif
-# ifneq ($(shell id -u), 0)
-# $(error 'Deploy must be run as root.')
-# endif
-
-deploy-pru0: $(TARGET_PRU0) deploycheck
+deploy-pru0: $(TARGET_PRU0)
+	@echo ''
 	@echo 'Installing PRU0 firmware to /lib/firmware'
-	cp $(TARGET_PRU0) /lib/firmware/am335x-pru0-fw
-	sync
-	@echo 'Rebooting PRU0'
-	$(shell echo "4a334000.pru0" > /sys/bus/platform/drivers/pru-rproc/unbind 2> /dev/null)
-	$(shell echo "4a334000.pru0" > /sys/bus/platform/drivers/pru-rproc/bind 2> /dev/null)
+	@cp -v $(TARGET_PRU0) /lib/firmware/beaglelogic-pru0-fw
 	@echo ''
 
-deploy-pru1: $(TARGET_PRU1) deploycheck
+deploy-pru1: $(TARGET_PRU1)
+	@echo ''
 	@echo 'Installing PRU1 firmware to /lib/firmware'
-	cp $(TARGET_PRU1) /lib/firmware/am335x-pru1-fw
-	sync
-	@echo 'Rebooting PRU1'
-	$(shell echo "4a338000.pru1" > /sys/bus/platform/drivers/pru-rproc/unbind 2> /dev/null)
-	$(shell echo "4a338000.pru1" > /sys/bus/platform/drivers/pru-rproc/bind 2> /dev/null)
+	@cp -v $(TARGET_PRU1) /lib/firmware/beaglelogic-pru1-fw
 	@echo ''
