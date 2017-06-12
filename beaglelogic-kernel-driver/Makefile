@@ -5,7 +5,7 @@
 KSRC ?= /lib/modules/$(shell uname -r)/build
 
 # Module targets (run from host)
-obj-m := beaglelogic.o beaglelogic_platform.o
+obj-m := beaglelogic.o
 
 all:
 	@make -C $(KSRC) M=$(PWD) ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- modules
