@@ -32,6 +32,11 @@ sigrok-util/
 *.o
 *.elf
 *.obj
+*.object
+*.map
+*.pp
+*.gch
+release/
 
 # Kbuild files
 *.ko
@@ -61,7 +66,7 @@ beaglelogic-pru0
 beaglelogic-pru1
 
 # Compiled Device tree overlay
-BB-BEAGLELOGIC-00A0.dtbo
+*.dtbo
 
 # Eclipse specific stuff
 .project
@@ -99,6 +104,3 @@ node_modules
 
 # Users Environment Variables
 .lock-wscript
-
-
-
