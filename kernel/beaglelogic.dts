@@ -22,9 +22,9 @@
 			/* Add default settings for the LA core */
 			pru-beaglelogic {
 				compatible = "beaglelogic,beaglelogic";
-				samplerate = <50000000>;	/* 100MHz, 50MHz, 40MHz, 25MHz, 20MHz, 10MHz, 5MHz, 1MHz : (200 / int n) MHz */
-				sampleunit = <1>;		/* Sample byte count: 1 or 2 bytes */
-				triggerflags = <0>; 		/* RFU for further firmware revisions */
+				samplerate = <50000000>;	/* All (100 / n) MHz sample rates, n = 1,2,... */
+				sampleunit = <1>;		/* 0:16-bit samples, 1:8-bit samples */
+				triggerflags = <0>; 		/* 0:one-shot, 1:continuous */
 
 				pruss = <&pruss>;
 				interrupt-parent = <&pruss_intc>;
