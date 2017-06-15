@@ -142,9 +142,9 @@ struct beaglelogicdev {
 	/* Device capabilities */
 	uint32_t maxbufcount;	/* Max buffer count supported by the PRU FW */
 	uint32_t bufunitsize;  	/* Size of 1 Allocation unit */
-	uint32_t samplerate; 	/* Sample rate = 100 / n MHz, n = 2+ (int) */
-	uint32_t triggerflags;	/* bit 0 : 1shot/!continuous */
-	uint32_t sampleunit; 	/* 0:8bits, 1:16bits */
+	uint32_t samplerate; 	/* Sample rate = 100 / n MHz, n = 1+ (int) */
+	uint32_t triggerflags;	/* 0:one-shot, 1:continuous */
+	uint32_t sampleunit; 	/* 0:16bits, 1:8bits */
 
 	/* State */
 	uint32_t state;
