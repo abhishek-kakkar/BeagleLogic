@@ -1200,7 +1200,7 @@ static int beaglelogic_probe(struct platform_device *pdev)
 
 	/* Get a handle to the PRUSS structures */
 	dev = &pdev->dev;
-	bldev->pruss = pruss_get(dev);
+	bldev->pruss = pruss_get(dev, NULL);
 	if (IS_ERR(bldev->pruss)) {
 		ret = PTR_ERR(bldev->pruss);
 		if (ret != -EPROBE_DEFER)
