@@ -22,11 +22,11 @@ into the upstream libsigrok repository.
 
 Directories:
 
-* beaglelogic-firmware: PRU Firmware
-* beaglelogic-kernel-driver: Device Tree overlay source and kernel module source and Makefile.
-**The default BeagleBone kernel v3.8.13-bone60 and above ship with BeagleLogic support.
+* firmware: PRU Firmware
+* kernel: Device Tree overlay source and kernel module source and Makefile.
+**The default BeagleBone kernel v4.9.31-ti-r41 and above ship with BeagleLogic support.
 You can verify it using the command** ```modinfo beaglelogic```
-* beaglelogic-server: Node.JS backend and static file server for the web interface
+* server: Node.JS backend and static file server for the web interface
 * cape: The cape design files (KiCAD schematic and PCB file only. Production Gerbers are available separately.)
 * webapp: A minimal web client for BeagleLogic. Uses sigrok-cli internally for data
 acquisition
@@ -41,7 +41,7 @@ License
 --------
 
  * **PRU firmware & Device tree overlay** : GPLv2
- * **Kernel Module**: GPLv2+
+ * **Kernel Module**: GPLv2
  * **sigrok bindings**: GPLv3+
  * **Web interface** [/beaglelogic-server and /webapp]: MIT
  * **Cape** : CERN Open Hardware License
