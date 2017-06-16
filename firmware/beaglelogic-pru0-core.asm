@@ -17,11 +17,11 @@
 	.global run
 run:
 	LDI	R17, (MAX_BUFLIST_ENTRIES * 8)
-	LDI	R0, 18
+	LDI	R0, SYSEV_PRU1_TO_PRU0
 	LDI	R1, 0
 $run$0:
 	; Load scatter/gather list entries
-	ADD	R16, R14, 12
+	ADD	R16, R14, 24
 $run$1:
 	; Load start and end address of mem chunk
 	; If it's zero, we're done
@@ -39,7 +39,7 @@ $run$2:
 
 	; Signal ARM that one buffer is now ready
 	; Also check if we received the kill signal
-	LDI	R31, SYSEV_VR_PRU0_TO_ARM + 16
+	LDI	R31, 32 | (SYSEV_PRU0_TO_ARM_A - 16)
 	QBBS	$run$exit, R31, 31
 
 	; Move to next buffer

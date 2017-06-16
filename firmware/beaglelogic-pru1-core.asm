@@ -25,8 +25,8 @@ $E?:	op
 	.endm
 
 	.sect ".text:main"
-	.global main
-main:
+	.global asm_main
+asm_main:
 	; Set C28 in this PRU's bank =0x24000
 	LDI32  R0, CTPPR_0+0x2000               ; Add 0x2000
 	LDI    R1, 0x00000240                   ; C28 = 00_0240_00h = PRU1 CFG Registers
@@ -54,7 +54,7 @@ main:
 	; Jump to the appropriate sample loop
 	; TODO
 
-	LDI    R31, 27 + 16                     ; Signal VRING1 to kernel driver
+	LDI    R31, PRU0_ARM_INTERRUPT_B + 16   ; Signal SYSEV_PRU0_TO_ARM_B to kernel driver
 	HALT
 
 	; Sample starts here
