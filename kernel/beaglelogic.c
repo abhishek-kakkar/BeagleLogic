@@ -2,7 +2,7 @@
  * Kernel module for BeagleLogic - a logic analyzer for the BeagleBone [Black]
  * Designed to be used in conjunction with a modified pru_rproc driver
  *
- * Copyright (C) 2014 Kumar Abhishek <abhishek@theembeddedkitchen.net>
+ * Copyright (C) 2014-17 Kumar Abhishek <abhishek@theembeddedkitchen.net>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the

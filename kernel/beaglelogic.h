@@ -2,7 +2,7 @@
  * Userspace/Kernelspace common API for BeagleLogic
  * ioctl commands and enumeration of states
  *
- * Copyright (C) 2014 Kumar Abhishek <abhishek@theembeddedkitchen.net>
+ * Copyright (C) 2014-17 Kumar Abhishek <abhishek@theembeddedkitchen.net>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
