@@ -105,7 +105,7 @@ int configure_capture() {
 	return 0;
 }
 
-static uint32_t handle_command(uint32_t cmd) {
+static int handle_command(uint32_t cmd) {
 	switch (cmd) {
 		case CMD_GET_VERSION:
 			return (MINORVER | (MAJORVER << 8));
