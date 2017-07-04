@@ -69,7 +69,7 @@ install_systemd_service() {
 install_sigrok() {
 	echo "${log} Installing sigrok and its dependencies"
 	# Installing just sigrok-cli pulls all dependencies
-	apt install -y sigrok-cli
+	# apt install -y sigrok-cli
 }
 
 install_node_modules() {
