@@ -1,0 +1,6 @@
+# /etc/udev/rules.d/90-beaglelogic.rules
+#
+# Change group to beaglelogic
+KERNEL=="beaglelogic", PROGRAM="/bin/sh -c 'for a in bufunitsize memalloc samplerate sampleunit state triggerflags; do chown root:beaglelogic /sys/devices/virtual/misc/beaglelogic/$a; done'"
+# Change permissions to ensure user+group read/write permissions
+KERNEL=="beaglelogic", PROGRAM="/bin/sh -c 'for a in bufunitsize memalloc samplerate sampleunit state triggerflags; do chmod ug+rw /sys/devices/virtual/misc/beaglelogic/$a; done'"
