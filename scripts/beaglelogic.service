@@ -1,0 +1,13 @@
+[Unit]
+Description=BeagleLogic Logic Analyzer
+ConditionPathExists=|DIR
+
+[Service]
+WorkingDirectory=DIR/server
+EnvironmentFile=/etc/default/beaglelogic
+ExecStart=/usr/bin/nodejs 'DIR/server/app.js'
+SyslogIdentifier=beaglelogic
+User=1000
+
+[Install]
+WantedBy=multi-user.target
