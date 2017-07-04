@@ -99,6 +99,11 @@ display_success_message() {
 }
 
 
+if [ "x$1" = "x--update-uenv-txt" ] ; then
+	update_uboot_uenv_txt
+	exit 0
+fi
+
 if [ "x$1" = "x--chroot" ] ; then
 	DEFAULT_USER=$2
 	RUNNING_AS_CHROOT="yes"
