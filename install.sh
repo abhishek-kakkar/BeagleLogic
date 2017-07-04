@@ -72,6 +72,14 @@ install_sigrok() {
 	apt install -y sigrok-cli
 }
 
+install_node_modules() {
+	echo "${log} Installing npm components for beaglelogic-server"
+	cd ${DIR}/server
+	if [ ! -d node_modules ] ; then
+		/bin/su ${DEFAULT_USER} -c npm install
+	fi
+}
+
 
 if [ "x$1" = "x--chroot" ] ; then
 	DEFAULT_USER=$2
@@ -89,4 +97,5 @@ install_pru_firmware
 create_beaglelogic_group
 install_udev_rules
 install_systemd_service
+install_node_modules
 install_sigrok
