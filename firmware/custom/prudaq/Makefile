@@ -133,3 +133,12 @@ clean:
 	@echo 'Finished cleaning project: $(PROJ_NAME)'
 	@echo '************************************************************'
 	@echo ''
+
+install: deploy
+deploy: $(TARGETS)
+	@echo ''
+	@echo 'Installing PRUDAQ additional PRU1 firmware to /lib/firmware'
+	@cp -v $(TARGET_CH0) /lib/firmware/beaglelogic-pru1-prudaq-ch0
+	@cp -v $(TARGET_CH1) /lib/firmware/beaglelogic-pru1-prudaq-ch1
+	@cp -v $(TARGET_CH01) /lib/firmware/beaglelogic-pru1-prudaq-ch01
+	@echo ''
