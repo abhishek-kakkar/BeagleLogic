@@ -4,7 +4,7 @@ After=local-fs.target
 
 [Service]
 Type=oneshot
-ExecStart=/bin/sh DIR/scripts/beaglelogic-startup.sh
+ExecStart=/bin/bash DIR/scripts/beaglelogic-startup.sh
 
 [Install]
 WantedBy=multi-user.target
