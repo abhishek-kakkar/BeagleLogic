@@ -23,3 +23,5 @@ config-pin -f $(dirname $0)/pinconfig
 
 echo "${log} Allocating 64MiB of logic buffer to BeagleLogic"
 echo 67108864 > /sys/devices/virtual/misc/beaglelogic/memalloc
+
+echo "${log} Loaded"
