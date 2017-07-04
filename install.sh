@@ -76,7 +76,7 @@ install_node_modules() {
 	echo "${log} Installing npm components for beaglelogic-server"
 	cd ${DIR}/server
 	if [ ! -d node_modules ] ; then
-		/bin/su ${DEFAULT_USER} -c npm install
+		/bin/su ${DEFAULT_USER} -c "npm install"
 	fi
 }
 
