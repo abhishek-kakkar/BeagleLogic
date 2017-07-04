@@ -90,6 +90,14 @@ update_uboot_uenv_txt() {
 	fi
 }
 
+display_success_message() {
+	if [ ! "x${RUNNING_AS_CHROOT}" = "xyes" ] ; then
+		echo "${log} Successfully Installed. Please reboot"
+	else
+		echo "${log} Installation Completed, uEnv.txt must be updated"
+	fi
+}
+
 
 if [ "x$1" = "x--chroot" ] ; then
 	DEFAULT_USER=$2
@@ -110,3 +118,4 @@ install_systemd_service
 install_node_modules
 install_sigrok
 update_uboot_uenv_txt
+display_success_message
