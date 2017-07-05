@@ -14,10 +14,14 @@ clean:
 	@make -C $(KSRC) M=$(PWD) ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- clean
 
 # Compile and install device tree
-overlay: beaglelogic-00A0.dtbo
+overlay: beaglelogic-00A0.dtbo bone_pwm_P9_31-00A0.dtbo
 
 beaglelogic-00A0.dtbo: beaglelogic-00A0.dts
 	dtc -O dtb -o beaglelogic-00A0.dtbo -b 0 -@ beaglelogic-00A0.dts
 
+bone_pwm_P9_31-00A0.dtbo: bone_pwm_P9_31-00A0.dts
+	dtc -O dtb -o bone_pwm_P9_31-00A0.dtbo -b 0 -@ beaglelogic-00A0.dts
+
 deploy_overlay:
 	cp -v beaglelogic-00A0.dtbo /lib/firmware
+	cp -v bone_pwm_P9_31-00A0.dtbo /lib/firmware
