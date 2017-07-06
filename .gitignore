@@ -73,7 +73,7 @@ beaglelogic-pru1
 .cproject
 .settings
 
-# Node.js related stuff 
+# Node.js related stuff
 # (from https://github.com/github/gitignore/blob/master/Node.gitignore)
 
 # Logs
@@ -104,3 +104,6 @@ node_modules
 
 # Users Environment Variables
 .lock-wscript
+
+# Documentation folder
+_build
