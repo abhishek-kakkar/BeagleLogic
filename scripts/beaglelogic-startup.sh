@@ -1,12 +1,13 @@
 #!/bin/bash
 
 log='beaglelogic-startup:'
+SLOTS="/sys/devices/platform/bone_capemgr/slots"
 
 check_uboot_overlay=$(grep bone_capemgr.uboot_capemgr_enabled=1 /proc/cmdline || true)
 if [ ! -d /sys/devices/virtual/misc/beaglelogic ] ; then
 	if [ "x${check_uboot_overlay}" = "x" ] ; then
-		config-pin overlay beaglelogic
-		config-pin overlay cape-universalh
+		echo beaglelogic > "${SLOTS}"
+		echo cape-universalh > "${SLOTS}"
 	fi
 
 	echo "${log} Waiting for BeagleLogic to show up (timeout in 120 seconds)"
