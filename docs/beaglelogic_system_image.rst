@@ -2,7 +2,8 @@ BeagleLogic System Image
 ========================
 
 The BeagleLogic system image is the official way to run BeagleLogic on the
-BeagleBone hardware.
+BeagleBone hardware. **No installation required**, just flash, boot and you are
+ready to capture samples.
 
 .. |br| raw:: html
 
