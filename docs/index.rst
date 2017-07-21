@@ -17,4 +17,5 @@ that runs on the BeagleBone including BeagleBone Black, Green and Green Wireless
    :caption: Contents
 
    install
+   beaglelogic_system_image
    differences_between_4_9_and_3_8
