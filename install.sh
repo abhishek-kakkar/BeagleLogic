@@ -99,6 +99,12 @@ display_success_message() {
 }
 
 
+if [ "x$1" = "x--upgrade"] ; then
+	UPGRADING="yes"
+else
+	UPGRADING="no"
+fi
+
 if [ "x$1" = "x--update-uenv-txt" ] ; then
 	update_uboot_uenv_txt
 	exit 0
@@ -117,10 +123,14 @@ else
 fi
 
 install_pru_firmware
-create_beaglelogic_group
+if [ "x${UPGRADING}" = "xno"] ; then
+	create_beaglelogic_group
+fi
 install_udev_rules
 install_systemd_service
 install_node_modules
 install_sigrok
-update_uboot_uenv_txt
+if [ "x${UPGRADING}" = "xno"] ; then
+	update_uboot_uenv_txt
+fi
 display_success_message
