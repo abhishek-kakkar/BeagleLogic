@@ -2,6 +2,10 @@
 Installation
 ============
 
+.. note:: The instructions in this document do not apply if you are running the
+          :doc:`beaglelogic_system_image`. You can directly proceed to
+          :doc:`first_capture`
+
 BeagleLogic has a simple installation script that can be used to install it
 on a clean BeagleBone Debian Image.
 
