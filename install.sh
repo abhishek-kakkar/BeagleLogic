@@ -99,7 +99,7 @@ display_success_message() {
 }
 
 
-if [ "x$1" = "x--upgrade"] ; then
+if [ "x$1" = "x--upgrade" ] ; then
 	UPGRADING="yes"
 else
 	UPGRADING="no"
@@ -123,14 +123,14 @@ else
 fi
 
 install_pru_firmware
-if [ "x${UPGRADING}" = "xno"] ; then
+if [ "x${UPGRADING}" = "xno" ] ; then
 	create_beaglelogic_group
 fi
 install_udev_rules
 install_systemd_service
 install_node_modules
 install_sigrok
-if [ "x${UPGRADING}" = "xno"] ; then
+if [ "x${UPGRADING}" = "xno" ] ; then
 	update_uboot_uenv_txt
 fi
 display_success_message
