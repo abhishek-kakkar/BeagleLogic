@@ -56,14 +56,19 @@ install_udev_rules() {
 install_systemd_service() {
 	echo "${log} Installing systemd startup service"
 	cp -v "${DIR}/scripts/beaglelogic" "/etc/default/beaglelogic"
+	cp -v "${DIR}/scripts/beaglelogic-tcp" "/etc/default/beaglelogic-tcp"
 	cp -v "${DIR}/scripts/beaglelogic.service" "/lib/systemd/system/beaglelogic.service"
 	cp -v "${DIR}/scripts/beaglelogic-startup.service" "/lib/systemd/system/beaglelogic-startup.service"
+	cp -v "${DIR}/scripts/beaglelogic-tcp.service" "/lib/systemd/system/beaglelogic-tcp.service"
 	chown root:root "/lib/systemd/system/beaglelogic.service"
 	chown root:root "/lib/systemd/system/beaglelogic-startup.service"
+	chown root:root "/lib/systemd/system/beaglelogic-tcp.service"
 	sed -i -e "s:DIR:${DIR}:" "/lib/systemd/system/beaglelogic.service"
 	sed -i -e "s:DIR:${DIR}:" "/lib/systemd/system/beaglelogic-startup.service"
+	sed -i -e "s:DIR:${DIR}:" "/lib/systemd/system/beaglelogic-tcp.service"
 	systemctl enable beaglelogic.service || true
 	systemctl enable beaglelogic-startup.service || true
+	systemctl enable beaglelogic-tcp.service || true
 }
 
 install_sigrok() {

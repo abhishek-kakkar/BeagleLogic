@@ -1,0 +1,14 @@
+[Unit]
+Description=BeagleLogic Logic Analyzer TCP Service
+ConditionPathExists=|DIR
+
+[Service]
+WorkingDirectory=DIR/tcp-server-node
+EnvironmentFile=/etc/default/beaglelogic-tcp
+ExecStart=/usr/bin/nodejs 'DIR/tcp-server-node/server.js'
+SyslogIdentifier=beaglelogic-tcp
+Restart=on-failure
+User=1000
+
+[Install]
+WantedBy=multi-user.target
