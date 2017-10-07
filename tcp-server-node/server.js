@@ -23,11 +23,17 @@ var server = net.createServer((socket) => {
     var limit_samples = -1
     var bl_read_stream
 
+    socket.on("error", (err) => {
+        // Silently suppress
+        //console.log(err)
+    })
+
     socket.on("data", (data) => {
         var cmd = String(data).trim().split(" ")
         var valid_sysfs_attrs = ["samplerate", "sampleunit", "triggerflags", "bufunitsize",
                                  "memalloc", "state"]
 
+        console.log("Received command: " + cmd)
         // Command as:
         //      samplerate
         // Outputs an integer value i.e. the samplerate
@@ -68,7 +74,9 @@ var server = net.createServer((socket) => {
                     break
 
                 case "close":
+                    bl_read_stream.unpipe()
                     bl_read_stream.close()
+                    bl_read_stream.destroy()
                     break
 
                 case "version":
