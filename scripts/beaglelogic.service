@@ -7,6 +7,7 @@ WorkingDirectory=DIR/server
 EnvironmentFile=/etc/default/beaglelogic
 ExecStart=/usr/bin/nodejs 'DIR/server/app.js'
 SyslogIdentifier=beaglelogic
+Restart=on-failure
 User=1000
 
 [Install]
