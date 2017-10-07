@@ -80,7 +80,11 @@ var server = net.createServer((socket) => {
                     break
 
                 case "version":
-                    socket.write("BeagleLogic 1.0\r\n")
+                    model = String(fs.readFileSync("/proc/device-tree/model")).slice(0, -1)
+                    if (model == "TI AM335x BeagleLogic Standalone")
+                        socket.write("BeagleLogic Standalone 1.0\r\n")
+                    else
+                        socket.write("BeagleLogic 1.0\r\n")
                     break
 
                 case "exit":
