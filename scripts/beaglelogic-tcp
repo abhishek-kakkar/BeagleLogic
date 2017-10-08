@@ -1,3 +1,2 @@
-NODE_PATH=/usr/local/lib/node_modules
 HOME=/home/debian
 PORT=5555
