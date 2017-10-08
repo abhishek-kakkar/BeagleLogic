@@ -85,6 +85,15 @@ install_node_modules() {
 	fi
 }
 
+install_go_and_compile_server() {
+	echo "${log} Installing Go"
+	apt install -y golang
+
+	echo "${log} Compiling TCP Server"
+	cd ${DIR}/tcp-server-go
+	/bin/su ${DEFAULT_USER} -c "go build server.go"
+}
+
 update_uboot_uenv_txt() {
 	if [ ! "x${RUNNING_AS_CHROOT}" = "xyes" ] ; then
 		echo "${log} Updating uEnv.txt"
@@ -134,6 +143,7 @@ fi
 install_udev_rules
 install_systemd_service
 install_node_modules
+install_go_and_compile_server
 install_sigrok
 if [ "x${UPGRADING}" = "xno" ] ; then
 	update_uboot_uenv_txt
