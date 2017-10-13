@@ -18,8 +18,8 @@
 			<span class="icon-bar"></span>
 			<span class="icon-bar"></span>
 		  </button>
-		  <a class="navbar-brand" href="#">BeagleLogic</a>
-		  <p class="navbar-text">A logic analyzer on the BeagleBone Black</p>
+		  <a class="navbar-brand" href="#">BeagleLogic Standalone</a>
+		  <p class="navbar-text">A logic analyzer using the PRUs on the BeagleBoard hardware</p>
 		</div>
 		<div class="navbar-collapse collapse">
 		  <ul class="nav navbar-nav navbar-right">
@@ -235,8 +235,8 @@
         <h4 class="modal-title" id="AboutBeagleLogic">About BeagleLogic</h4>
       </div>
       <div class="modal-body">
-      BeagleLogic is a logic analyzer on the BeagleBone Black.
-      Visit <a href="http://www.beaglelogic.net" target="_blank">beaglelogic.net</a> for more information.
+      <p>BeagleLogic Standalone is a standalone logic analyzer based on <a href="http://beaglelogic.net" target="_blank">BeagleLogic</a> and the BeagleBoard hardware.
+		Visit <a href="http://standalone.beaglelogic.net" target="_blank">standalone.beaglelogic.net</a> for more information.</p>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
@@ -307,7 +307,7 @@
 
 		socket.on('connect', function(data) {
 			$(".alert").alert('close');
-			showAlert('success', 'Connected to your BeagleBone');
+			showAlert('success', 'Connected to your BeagleLogic Standalone');
 		});
 
 		socket.on('disconnect', function() {
