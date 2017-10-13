@@ -213,10 +213,10 @@
 				  <button type="button" class="btn btn-default" onclick="beginCapture()"><span class="glyphicon glyphicon-play"></span> Begin Capture</button>
 				</div>
 				<div class="btn-group">
-				  <button type="button" class="btn btn-default" onclick="saveCapture()"><span class="glyphicon glyphicon-save"></span> Save Capture</button>
+				  <button type="button" class="btn btn-default" onclick="saveCapture()" disabled aria-disabled="true"><span class="glyphicon glyphicon-save"></span> Save Capture</button>
 				</div>
 				<div class="btn-group">
-				  <button type="button" class="btn btn-default" onclick="dumpRawData()"><span class="glyphicon glyphicon-import"></span> Dump Raw Data</button>
+				  <button type="button" class="btn btn-default" onclick="dumpRawData()" disabled aria-disabled="true"><span class="glyphicon glyphicon-import"></span> Dump Raw Data</button>
 				</div>
 			</div>
 			<p>
@@ -420,11 +420,11 @@
 	}
 
 	function saveCapture() {
-
+		alert('Functionality not currently implemented.')
 	}
 
 	function dumpRawData() {
-
+		alert('Functionality not currently implemented.')
 	}
 </script>
 </body>
