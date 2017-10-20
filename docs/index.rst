@@ -8,6 +8,12 @@ Welcome to BeagleLogic!
 
 .. image:: ../logo.png
 
+.. note:: Introducing `BeagleLogic Standalone <standalone.beaglelogic.net>`_!
+
+          BeagleLogic Standalone is a turnkey logic analyzer that offers
+          16 logic channels and Gigabit Ethernet, better than a combination of
+          BeagleLogic cape + BeagleBone Black.
+
 Thank you for choosing BeagleLogic! BeagleLogic is a 100Msps logic analyzer
 that runs on the BeagleBone including BeagleBone Black, Green and Green Wireless.
 
@@ -36,12 +42,25 @@ which, once installed on the BeagleBone, can be accessed from port 4000 and can
 be used for low-volume captures (upto 3K samples). It makes BeagleLogic a useful
 tool for beginners as a learning tool about digital protocols.
 
+Core Specifications:
+
+    * **Sample Rate:** 10Hz to 100MHz
+    * **Sample Size:** 8-bit or 16-bit (14 usable on the BeagleBone Black,
+      BeagleLogic Standalone supports all 16 channels)
+    * **Sample Depth**: Depends on the free RAM in the system. Starting from a
+      minimum of 8 MB upto 320 MB of the system RAM can be reserved for
+      BeagleLogic operation.
+    * **Sampling Mode**: One-Shot or Continuous Sampling, software-triggered
+      [in conjunction with sigrok] . *Please Note: Continuous Sampling is
+      subject to constraints on the link between the RAM and secondary
+      storage/PC and CPU processing time before buffers begin to be dropped.*
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Contents
 
    beaglelogic_system_image
    install
    differences_between_4_9_and_3_8
    first_capture
+   sysfs_attributes
