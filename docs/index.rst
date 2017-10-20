@@ -8,7 +8,7 @@ Welcome to BeagleLogic!
 
 .. image:: ../logo.png
 
-.. note:: Introducing `BeagleLogic Standalone <standalone.beaglelogic.net>`_!
+.. note:: Introducing `BeagleLogic Standalone <http://standalone.beaglelogic.net>`_!
 
           BeagleLogic Standalone is a turnkey logic analyzer that offers
           16 logic channels and Gigabit Ethernet, better than a combination of
