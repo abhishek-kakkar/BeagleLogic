@@ -22,6 +22,7 @@
 
 #include <linux/platform_device.h>
 #include <linux/pruss.h>
+#include <linux/pruss_intc.h>
 #include <linux/remoteproc.h>
 #include <linux/miscdevice.h>
 
@@ -1201,28 +1202,29 @@ static int beaglelogic_probe(struct platform_device *pdev)
 
 	/* Get a handle to the PRUSS structures */
 	dev = &pdev->dev;
-	bldev->pruss = pruss_get(dev, NULL);
-	if (IS_ERR(bldev->pruss)) {
-		ret = PTR_ERR(bldev->pruss);
-		if (ret != -EPROBE_DEFER)
-			dev_err(dev, "Unable to get pruss handle.\n");
-		goto fail_free;
-	}
 
-	bldev->pru0 = pruss_rproc_get(bldev->pruss, PRUSS_PRU0);
+	bldev->pru0 = pru_rproc_get(node, PRUSS_PRU0);
 	if (IS_ERR(bldev->pru0)) {
 		ret = PTR_ERR(bldev->pru0);
 		if (ret != -EPROBE_DEFER)
 			dev_err(dev, "Unable to get PRU0.\n");
-		goto fail_pruss_put;
+		goto fail_free;
 	}
 
-	bldev->pru1 = pruss_rproc_get(bldev->pruss, PRUSS_PRU1);
+	bldev->pruss = pruss_get(bldev->pru0);
+	if (IS_ERR(bldev->pruss)) {
+		ret = PTR_ERR(bldev->pruss);
+		if (ret != -EPROBE_DEFER)
+			dev_err(dev, "Unable to get pruss handle.\n");
+		goto fail_pru0_put;
+	}
+
+	bldev->pru1 = pru_rproc_get(node, PRUSS_PRU1);
 	if (IS_ERR(bldev->pru1)) {
 		ret = PTR_ERR(bldev->pru1);
 		if (ret != -EPROBE_DEFER)
 			dev_err(dev, "Unable to get PRU0.\n");
-		goto fail_pru0_put;
+		goto fail_pruss_put;
 	}
 
 	ret = pruss_request_mem_region(bldev->pruss, PRUSS_MEM_DRAM0,
@@ -1387,11 +1389,11 @@ fail_free_irq1:
 fail_putmem:
 	if (bldev->pru0sram.va)
 		pruss_release_mem_region(bldev->pruss, &bldev->pru0sram);
-	pruss_rproc_put(bldev->pruss, bldev->pru1);
-fail_pru0_put:
-	pruss_rproc_put(bldev->pruss, bldev->pru0);
+	pru_rproc_put(bldev->pru1);
 fail_pruss_put:
 	pruss_put(bldev->pruss);
+fail_pru0_put:
+	pru_rproc_put(bldev->pru0);
 fail_free:
 	kfree(bldev);
 fail:
@@ -1422,9 +1424,9 @@ static int beaglelogic_remove(struct platform_device *pdev)
 
 	/* Release handles to PRUSS memory regions */
 	pruss_release_mem_region(bldev->pruss, &bldev->pru0sram);
-	pruss_rproc_put(bldev->pruss, bldev->pru1);
-	pruss_rproc_put(bldev->pruss, bldev->pru0);
+	pru_rproc_put(bldev->pru1);
 	pruss_put(bldev->pruss);
+	pru_rproc_put(bldev->pru0);
 
 	/* Free up memory */
 	kfree(bldev);
