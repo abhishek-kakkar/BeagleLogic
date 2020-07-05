@@ -186,6 +186,7 @@ static int beaglelogic_memalloc(struct device *dev, uint32_t bufsize)
 	/* Too large? */
 	if (cnt > bldev->maxbufcount) {
 		dev_err(dev, "Not enough memory\n");
+		mutex_unlock(&bldev->mutex);
 		return -ENOMEM;
 	}
 
