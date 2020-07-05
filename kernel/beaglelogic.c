@@ -1254,33 +1254,25 @@ static int beaglelogic_probe(struct platform_device *pdev)
 			goto fail_putmem;
 	}
 
-	ret = request_irq(bldev->from_bl_irq_1, beaglelogic_serve_irq,
-		IRQF_ONESHOT, dev_name(dev), bldev);
-	if (ret) goto fail_putmem;
-
-	ret = request_irq(bldev->from_bl_irq_2, beaglelogic_serve_irq,
-		IRQF_ONESHOT, dev_name(dev), bldev);
-	if (ret) goto fail_free_irq1;
-
 	/* Set firmware and boot the PRUs */
 	ret = rproc_set_firmware(bldev->pru0, bldev->fw_data->fw_names[0]);
 	if (ret) {
 		dev_err(dev, "Failed to set PRU0 firmware %s: %d\n",
 			bldev->fw_data->fw_names[0], ret);
-		goto fail_free_irqs;
+		goto fail_putmem;
 	}
 
 	ret = rproc_set_firmware(bldev->pru1, bldev->fw_data->fw_names[1]);
 	if (ret) {
 		dev_err(dev, "Failed to set PRU1 firmware %s: %d\n",
 			bldev->fw_data->fw_names[1], ret);
-		goto fail_free_irqs;
+		goto fail_putmem;
 	}
 
 	ret = rproc_boot(bldev->pru0);
 	if (ret) {
 		dev_err(dev, "Failed to boot PRU0: %d\n", ret);
-		goto fail_free_irqs;
+		goto fail_putmem;
 	}
 
 	ret = rproc_boot(bldev->pru1);
@@ -1289,12 +1281,20 @@ static int beaglelogic_probe(struct platform_device *pdev)
 		goto fail_shutdown_pru0;
 	}
 
+	ret = request_irq(bldev->from_bl_irq_1, beaglelogic_serve_irq,
+		IRQF_ONESHOT, dev_name(dev), bldev);
+	if (ret) goto fail_shutdown_prus;
+
+	ret = request_irq(bldev->from_bl_irq_2, beaglelogic_serve_irq,
+		IRQF_ONESHOT, dev_name(dev), bldev);
+	if (ret) goto fail_free_irq1;
+
 	printk("BeagleLogic loaded and initializing\n");
 
 	/* Once done, register our misc device and link our private data */
 	ret = misc_register(&bldev->miscdev);
 	if (ret)
-		goto fail_shutdown_prus;
+		goto fail_free_irqs;
 	dev = bldev->miscdev.this_device;
 	dev_set_drvdata(dev, bldev);
 
@@ -1378,14 +1378,14 @@ static int beaglelogic_probe(struct platform_device *pdev)
 	return 0;
 faildereg:
 	misc_deregister(&bldev->miscdev);
-fail_shutdown_prus:
-	rproc_shutdown(bldev->pru1);
-fail_shutdown_pru0:
-	rproc_shutdown(bldev->pru0);
 fail_free_irqs:
 	free_irq(bldev->from_bl_irq_2, bldev);
 fail_free_irq1:
 	free_irq(bldev->from_bl_irq_1, bldev);
+fail_shutdown_prus:
+	rproc_shutdown(bldev->pru1);
+fail_shutdown_pru0:
+	rproc_shutdown(bldev->pru0);
 fail_putmem:
 	if (bldev->pru0sram.va)
 		pruss_release_mem_region(bldev->pruss, &bldev->pru0sram);
