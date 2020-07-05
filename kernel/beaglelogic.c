@@ -341,7 +341,7 @@ static int beaglelogic_map_and_submit_all_buffers(struct device *dev)
 fail:
 	/* Unmap the buffers */
 	for (j = 0; j < i; j++)
-		beaglelogic_unmap_buffer(dev, &bldev->buffers[i]);
+		beaglelogic_unmap_buffer(dev, &bldev->buffers[j]);
 
 	dev_err(dev, "DMA Mapping failed at i=%d\n", i);
 
