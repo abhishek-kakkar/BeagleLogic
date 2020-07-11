@@ -16,10 +16,7 @@ Simply do::
 This will capture 20MB worth logic data (20MSamples if you are in the 8-bit mode
 and 10MSamples if you are in 16-bit mode)
 
-To modify the sample rate, and other aspects of the capture, use the `sysfs
-attributes`_
-
-.. _`sysfs attributes`:
+To modify the sample rate, and other aspects of the capture, go to :doc:`sysfs_attributes`
 
 Using sigrok
 ------------
