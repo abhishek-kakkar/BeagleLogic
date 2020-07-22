@@ -1,0 +1,4 @@
+(sym_lib_table
+  (lib (name bbb)(type Legacy)(uri ${KIPRJMOD}/bbb.lib)(options "")(descr ""))
+  (lib (name 74LVCH16245)(type Legacy)(uri ${KIPRJMOD}/74LVCH16245.lib)(options "")(descr ""))
+)
