@@ -624,6 +624,8 @@ ssize_t beaglelogic_f_read (struct file *filp, char __user *buf,
 perform_copy:
 	count = min(reader->remaining, sz);
 
+	dma_sync_single_for_cpu(dev, reader->buf->phys_addr, reader->buf->size, DMA_FROM_DEVICE);   // sync for cpu to access the buffer
+
 	if (copy_to_user(buf, reader->buf->buf + reader->pos, count))
 		return -EFAULT;
 
@@ -644,6 +646,8 @@ perform_copy:
 		reader->pos = 0;
 		reader->remaining = reader->buf->size;
 	}
+
+	dma_sync_single_for_device(dev, reader->buf->phys_addr, reader->buf->size, DMA_FROM_DEVICE);    // sync for device to access the buffer
 
 	return count;
 }
